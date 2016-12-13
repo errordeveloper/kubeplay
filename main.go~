@@ -1,0 +1,50 @@
+package main
+
+import (
+	"flag"
+	"fmt"
+	"time"
+
+	"github.com/mitchellh/go-mruby"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/pkg/api/v1"
+	"k8s.io/client-go/tools/clientcmd"
+)
+
+var kubeconfig = flag.String("kubeconfig", "./config", "absolute path to the kubeconfig file")
+
+func main() {
+	flag.Parse()
+	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
+	if err != nil {
+		panic(err.Error())
+	}
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	mrb := mruby.NewMrb()
+	defer mrb.Close()
+
+	// Our custom function we'll expose to Ruby. The first return
+	// value is what to return from the func and the second is an
+	// exception to raise (if any).
+	kfunc := func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
+		pods, err := clientset.Core().Pods("").List(v1.ListOptions{})
+		if err != nil {
+			panic(err.Error())
+		}
+		fmt.Printf("There are %d pods in the cluster\n", len(pods.Items))
+		return nil, nil
+	}
+
+	// Lets define a custom class and a class method we can call.
+	class := mrb.DefineClass("KubeShell", nil)
+	class.DefineClassMethod("pods", kfunc, mruby.ArgsReq(0))
+
+	_, err = mrb.LoadString(`KubeShell.pods()`)
+	if err != nil {
+		panic(err.Error())
+	}
+}
