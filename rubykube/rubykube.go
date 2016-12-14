@@ -1,16 +1,23 @@
 package rubykube
 
 import (
+	"flag"
 	_ "fmt"
 	"strings"
 
 	"github.com/erikh/box/builder/signal"
 	"github.com/erikh/box/log"
 	mruby "github.com/mitchellh/go-mruby"
+
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
+var kubeconfig = flag.String("kubeconfig", "./config", "absolute path to the kubeconfig file")
+
 type RubyKube struct {
-	mrb *mruby.Mrb
+	mrb       *mruby.Mrb
+	clientset *kubernetes.Clientset
 }
 
 func keep(omitFuncs []string, name string) bool {
@@ -22,8 +29,15 @@ func keep(omitFuncs []string, name string) bool {
 	return true
 }
 
-// NewRubyKube may return an error on mruby issues.
+// NewRubyKube may return an error on mruby or k8s.io/client-go issues.
 func NewRubyKube(omitFuncs []string) (*RubyKube, error) {
+	flag.Parse()
+
+	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
+	if err != nil {
+		panic(err.Error())
+	}
+
 	rk := &RubyKube{mrb: mruby.NewMrb()}
 
 	rk.mrb.DisableGC()
@@ -46,6 +60,11 @@ func NewRubyKube(omitFuncs []string) (*RubyKube, error) {
 	}
 
 	signal.SetSignal(nil)
+
+	rk.clientset, err = kubernetes.NewForConfig(config)
+	if err != nil {
+		panic(err.Error())
+	}
 
 	return rk, nil
 }

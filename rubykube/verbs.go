@@ -16,8 +16,7 @@ import (
 	mruby "github.com/mitchellh/go-mruby"
 
 	_ "k8s.io/client-go/kubernetes"
-	_ "k8s.io/client-go/pkg/api/v1"
-	_ "k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/pkg/api/v1"
 )
 
 // Definition is a jump table definition used for programming the DSL into the
@@ -44,6 +43,7 @@ var verbJumpTable = map[string]verbDefinition{
 	//"entrypoint": {entrypoint, mruby.ArgsAny()},
 	//"set_exec":   {setExec, mruby.ArgsReq(1)},
 	"test1": {test1, mruby.ArgsReq(1)},
+	"pods":  {test1, mruby.ArgsReq(0)},
 }
 
 type verbFunc func(rk *RubyKube, args []*mruby.MrbValue, m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value)
@@ -84,5 +84,22 @@ func test1(rk *RubyKube, args []*mruby.MrbValue, m *mruby.Mrb, self *mruby.MrbVa
 		return nil, createException(m, err.Error())
 	}
 
+	return nil, nil
+}
+
+func pods(rk *RubyKube, args []*mruby.MrbValue, m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
+	//if err := standardCheck(rk, args, 1); err != nil {
+	//	return nil, createException(m, err.Error())
+	//}
+
+	pods, err := rk.clientset.Core().Pods("").List(v1.ListOptions{})
+	if err != nil {
+		return nil, createException(m, err.Error())
+	}
+	fmt.Printf("There are %d pods in the cluster\n", len(pods.Items))
+
+	if err != nil {
+		panic(err.Error())
+	}
 	return nil, nil
 }

@@ -1,28 +1,20 @@
 package repl
 
 import (
-	"flag"
 	"fmt"
 	"io"
 	"os"
-	_ "runtime/debug"
 	"strings"
 
 	"github.com/chzyer/readline"
 	"github.com/errordeveloper/kubeshell/rubykube"
-	"github.com/mitchellh/go-mruby"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/clientcmd"
 )
-
-var kubeconfig = flag.String("kubeconfig", "./config", "absolute path to the kubeconfig file")
 
 // Repl encapsulates a series of items used to create a read-evaluate-print
 // loop so that end users can manually enter build instructions.
 type Repl struct {
 	readline *readline.Instance
-	mrb      *mruby.Mrb
-	rk       *rubykube.RubyKube
+	rubykube *rubykube.RubyKube
 }
 
 // NewRepl constructs a new Repl.
@@ -37,18 +29,6 @@ func NewRepl() (*Repl, error) {
 		rl.Close()
 		return nil, err
 	}
-
-	flag.Parse()
-	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
-	if err != nil {
-		panic(err.Error())
-	}
-	_, err = kubernetes.NewForConfig(config) // clientset
-	if err != nil {
-		panic(err.Error())
-	}
-	mrb := mruby.NewMrb()
-	//defer mrb.Close()
 
 	/*
 
@@ -115,16 +95,14 @@ func NewRepl() (*Repl, error) {
 
 		//return &Repl{readline: rl, builder: b}, nil
 	*/
-	return &Repl{readline: rl, mrb: mrb, rk: rk}, nil
+	return &Repl{readline: rl, rubykube: rk}, nil
 }
 
 // Loop runs the loop. Returns nil on io.EOF, otherwise errors are forwarded.
 func (r *Repl) Loop() error {
 	defer func() {
 		if err := recover(); err != nil {
-			fmt.Println(err)
-			// interpreter signal or other badness, just abort.
-			//debug.PrintStack()
+			fmt.Println(err) // interpreter signal or other badness, just abort.
 			os.Exit(3)
 		}
 	}()
@@ -156,7 +134,7 @@ func (r *Repl) Loop() error {
 			os.Exit(0)
 		}
 
-		val, err := r.rk.Run(line)
+		val, err := r.rubykube.Run(line)
 		line = ""
 		if err != nil {
 			fmt.Printf("+++ Error: %v\n", err)
