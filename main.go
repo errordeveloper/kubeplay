@@ -1,7 +1,11 @@
 package main
 
+import (
+	"github.com/errordeveloper/kubeshell/repl"
+)
+
 func main() {
-	repl, err := NewRepl()
+	repl, err := repl.NewRepl()
 	if err != nil {
 		panic(err.Error())
 	}
