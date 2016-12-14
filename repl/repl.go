@@ -30,71 +30,6 @@ func NewRepl() (*Repl, error) {
 		return nil, err
 	}
 
-	/*
-
-		type Method struct {
-			Func    mruby.Func
-			ArgsReq int
-		}
-
-		type containerClassVars struct {
-			Container v1.Container
-		}
-
-		ctx := containerClassVars{}
-
-		containerClassMethods := map[string]Method{
-			"count_pods": Method{
-				Func: func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
-					pods, err := clientset.Core().Pods("").List(v1.ListOptions{})
-					if err != nil {
-						panic(err.Error())
-					}
-					fmt.Printf("There are %d pods in the cluster\n", len(pods.Items))
-					return nil, nil
-				},
-				ArgsReq: 0,
-			},
-			//"decode_test": Method{
-			//	Func: func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
-			//		var logData interface{}
-			//		args := m.GetArgs()
-			//		if err := mruby.Decode(&logData, args[0]); err != nil {
-			//			panic(err.Error())
-			//		}
-
-			//		fmt.Printf("Result: %+v\n", logData)
-
-			//		return nil, nil
-			//	},
-			//	ArgsReq: 1,
-			//},
-			"initialize": Method{
-				Func: func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
-					args := m.GetArgs()
-					ctx.Container = v1.Container{Image: args[0].String()}
-
-					imageParts := strings.Split(strings.Split(ctx.Container.Image, ":")[0], "/")
-					ctx.Container.Name = imageParts[len(imageParts)-1]
-					if len(args) > 1 {
-						ctx.Container.Name = args[1].String()
-					}
-
-					fmt.Printf("%#v\n", ctx.Container)
-
-					return nil, nil
-				},
-				ArgsReq: 1,
-			},
-		}
-
-		containerClass := mrb.DefineClass("Container", nil)
-		for k, v := range containerClassMethods {
-			containerClass.DefineClassMethod(k, v.Func, mruby.ArgsReq(v.ArgsReq))
-		}
-
-		//return &Repl{readline: rl, builder: b}, nil
-	*/
 	return &Repl{readline: rl, rubykube: rk}, nil
 }
 
@@ -140,13 +75,6 @@ func (r *Repl) Loop() error {
 			fmt.Printf("+++ Error: %v\n", err)
 			continue
 		}
-
-		//_, err = r.mrb.LoadString(line)
-		//line = ""
-		//if err != nil {
-		//	fmt.Printf("+++ Error: %v\n", err)
-		//	continue
-		//}
 
 		fmt.Println(val)
 	}
