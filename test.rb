@@ -2,6 +2,12 @@ module KubeShellObjectPods
   def [](args)
     puts "kubectl get pods", args
   end
+  def to_s
+    "pods as a string"
+  end
+  def inspect
+    "pods are us!"
+  end
 end
 
 module KubeShellObject
@@ -10,12 +16,19 @@ module KubeShellObject
   end
 end
 
-pods = Object.new
-pods.extend KubeShellObjectPods
+def _pods
+  @this = Object.new
+  @this.extend KubeShellObjectPods
+  return @this
+end
 
-_ = Object.new
-_.extend KubeShellObject
+def _
+  @this = Object.new
+  @this.extend KubeShellObject
+  return @this
+end
 
 _[name: "test-label", tada: "yes", foo: "bar", bar: true]
 
-pods[foo: 1]
+_pods[foo: 1]
+puts _pods
