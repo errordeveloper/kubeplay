@@ -26,6 +26,11 @@ type verbDefinition struct {
 	argSpec  mruby.ArgSpec
 }
 
+type methodDefintion struct {
+	argSpec    mruby.ArgSpec
+	methodFunc mruby.Func
+}
+
 // verbJumpTable is the dispatch instructions sent to the builder at preparation time.
 var verbJumpTable = map[string]verbDefinition{
 	//"debug":      {debug, mruby.ArgsOpt(1)},
@@ -100,60 +105,75 @@ func newApp(rk *RubyKube, args []*mruby.MrbValue, m *mruby.Mrb, self *mruby.MrbV
 	return nil, nil
 }
 
+func defineClass(m *mruby.Mrb, name string, methods map[string]methodDefintion) *mruby.Class {
+	class := m.DefineClass(name, nil)
+	for name, m := range methods {
+		class.DefineMethod(name, m.methodFunc, m.argSpec)
+	}
+	return class
+}
+
+func definePodClass(rk *RubyKube, pods *kapi.PodList, m *mruby.Mrb) *mruby.Class {
+	return defineClass(m, "RubyKubePods", map[string]methodDefintion{
+		"fetch!": {
+			mruby.ArgsReq(0), func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
+				var err error
+				pods, err = rk.clientset.Core().Pods("").List(kapi.ListOptions{})
+				if err != nil {
+					return nil, createException(m, err.Error())
+				}
+				return self, nil
+			},
+		},
+		"inspect": {
+			mruby.ArgsReq(0), func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
+				for n, pod := range pods.Items {
+					fmt.Printf("%d: %s/%s\n", n, pod.ObjectMeta.Namespace, pod.ObjectMeta.Name)
+				}
+				return self, nil
+			},
+		},
+		"[]": {
+			mruby.ArgsReq(1), func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
+				args := m.GetArgs()
+				if err := standardCheck(rk, args, 1); err != nil {
+					return nil, createException(m, err.Error())
+				}
+				n := args[0]
+				if n.Type() != mruby.TypeFixnum {
+					return nil, createException(m, "Argument must be a integer")
+				}
+				if n.Fixnum()+1 > len(pods.Items) {
+					return nil, createException(m, "Index out of range")
+				}
+				pod := pods.Items[n.Fixnum()]
+				fmt.Printf("%d: %s/%s\n", n.Fixnum(), pod.ObjectMeta.Namespace, pod.ObjectMeta.Name)
+				return self, nil
+			},
+		},
+	})
+
+}
+
 func pods(rk *RubyKube, args []*mruby.MrbValue, m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
 	var (
-		pods *kapi.PodList
-		v    *mruby.MrbValue
-		err  error
+		value *mruby.MrbValue
+		class *mruby.Class
+		err   error
 	)
-	podsClass := m.DefineClass("RubyKubePods", nil)
 
-	podsInitializeArgs := mruby.ArgsReq(0)
-	podsInitialize := func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
-		var err error
-		pods, err = rk.clientset.Core().Pods("").List(kapi.ListOptions{})
-		if err != nil {
-			return nil, createException(m, err.Error())
-		}
-		return self, nil
-
+	if class == nil {
+		class = definePodClass(rk, &kapi.PodList{}, m)
 	}
-	podsClass.DefineMethod("fetch!", podsInitialize, podsInitializeArgs)
-
-	podsInspectArgs := mruby.ArgsReq(0)
-	podsInspect := func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
-		for n, pod := range pods.Items {
-			fmt.Printf("%d: %s/%s\n", n, pod.ObjectMeta.Namespace, pod.ObjectMeta.Name)
-		}
-		return self, nil
-	}
-	podsClass.DefineMethod("inspect", podsInspect, podsInspectArgs)
-
-	podsGetItemArgs := mruby.ArgsReq(1)
-	podsGetItem := func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
-		args := m.GetArgs()
-		if err := standardCheck(rk, args, 1); err != nil {
-			return nil, createException(m, err.Error())
-		}
-		n := args[0]
-		if n.Type() != mruby.TypeFixnum {
-			return nil, createException(m, "Argument must be a integer")
-		}
-		pod := pods.Items[n.Fixnum()]
-		fmt.Printf("%d: %s/%s\n", n.Fixnum(), pod.ObjectMeta.Namespace, pod.ObjectMeta.Name)
-		return self, nil
-	}
-	podsClass.DefineMethod("[]", podsGetItem, podsGetItemArgs)
-
-	if v, err = podsClass.New(); err != nil {
+	if value, err = class.New(); err != nil {
 		return nil, createException(m, err.Error())
 	}
 
-	if v, err = v.Call("fetch!"); err != nil {
+	if value, err = value.Call("fetch!"); err != nil {
 		return nil, createException(m, err.Error())
 	}
 
-	return v, nil
+	return value, nil
 }
 
 func countPods(rk *RubyKube, args []*mruby.MrbValue, m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
