@@ -5,6 +5,7 @@ package rubykube
 */
 
 import (
+	"encoding/json"
 	"fmt"
 	_ "io"
 	_ "io/ioutil"
@@ -53,6 +54,33 @@ var verbJumpTable = map[string]verbDefinition{
 }
 
 type verbFunc func(rk *RubyKube, args []*mruby.MrbValue, m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value)
+
+type podClass struct {
+	class *mruby.Class
+	self  *mruby.MrbValue
+	vars  podInstanceVars
+}
+
+type podInstanceVars struct {
+	pod *kapi.Pod
+}
+
+type podsClass struct {
+	class *mruby.Class
+	self  *mruby.MrbValue
+	vars  podsInstanceVars
+}
+type podsInstanceVars struct {
+	pods *kapi.PodList
+}
+
+var (
+	// TODO: this is obviously dangerous, the Pod and PodList objects should be instance variables,
+	// but it may be sufficent for the moment – as the ways you can instantiate classes is limited
+	// (or at least it's supposed to be limited)
+	podObj  podClass
+	podsObj podsClass
+)
 
 func newApp(rk *RubyKube, args []*mruby.MrbValue, m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
 	if err := standardCheck(rk, args, 1); err != nil {
@@ -113,12 +141,23 @@ func defineClass(m *mruby.Mrb, name string, methods map[string]methodDefintion) 
 	return class
 }
 
-func definePodClass(rk *RubyKube, pods *kapi.PodList, m *mruby.Mrb) *mruby.Class {
+func marshalToJSON(obj interface{}, m *mruby.Mrb) (mruby.Value, mruby.Value) {
+	data, err := json.MarshalIndent(obj, "", "  ")
+	if err != nil {
+		return nil, createException(m, err.Error())
+	}
+	fmt.Printf("%s", data)
+	// TODO: should really return a ruby string
+	return nil, nil
+}
+
+func definePodsClass(rk *RubyKube, m *mruby.Mrb) *mruby.Class {
 	return defineClass(m, "RubyKubePods", map[string]methodDefintion{
-		"fetch!": {
+		"get!": {
 			mruby.ArgsReq(0), func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
 				var err error
-				pods, err = rk.clientset.Core().Pods("").List(kapi.ListOptions{})
+
+				podsObj.vars.pods, err = rk.clientset.Core().Pods("").List(kapi.ListOptions{})
 				if err != nil {
 					return nil, createException(m, err.Error())
 				}
@@ -127,6 +166,8 @@ func definePodClass(rk *RubyKube, pods *kapi.PodList, m *mruby.Mrb) *mruby.Class
 		},
 		"inspect": {
 			mruby.ArgsReq(0), func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
+				pods := podsObj.vars.pods
+
 				for n, pod := range pods.Items {
 					fmt.Printf("%d: %s/%s\n", n, pod.ObjectMeta.Namespace, pod.ObjectMeta.Name)
 				}
@@ -135,8 +176,12 @@ func definePodClass(rk *RubyKube, pods *kapi.PodList, m *mruby.Mrb) *mruby.Class
 		},
 		"[]": {
 			mruby.ArgsReq(1), func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
+				var err error
+				pods := podsObj.vars.pods
+
 				args := m.GetArgs()
-				if err := standardCheck(rk, args, 1); err != nil {
+				err = standardCheck(rk, args, 1)
+				if err != nil {
 					return nil, createException(m, err.Error())
 				}
 				n := args[0]
@@ -148,28 +193,78 @@ func definePodClass(rk *RubyKube, pods *kapi.PodList, m *mruby.Mrb) *mruby.Class
 				}
 				pod := pods.Items[n.Fixnum()]
 				fmt.Printf("%d: %s/%s\n", n.Fixnum(), pod.ObjectMeta.Namespace, pod.ObjectMeta.Name)
-				return self, nil
+
+				podObj.self, err = podObj.class.New()
+				if err != nil {
+					return nil, createException(m, err.Error())
+				}
+				podObj.vars.pod = &pod
+				return podObj.self, nil
+			},
+		},
+		"to_json": {
+			mruby.ArgsReq(0), func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
+				pods := podsObj.vars.pods
+				return marshalToJSON(pods, m)
 			},
 		},
 	})
+}
 
+func definePodClass(rk *RubyKube, m *mruby.Mrb) *mruby.Class {
+	return defineClass(m, "RubyKubePod", map[string]methodDefintion{
+		"get!": {
+			mruby.ArgsReq(0), func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
+				var err error
+				pod := podObj.vars.pod
+
+				pod, err = rk.clientset.Core().Pods("").Get(pod.ObjectMeta.Name)
+				if err != nil {
+					return nil, createException(m, err.Error())
+				}
+				return self, nil
+			},
+		},
+		"inspect": {
+			mruby.ArgsReq(0), func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
+				pod := podObj.vars.pod
+				fmt.Printf("self: %s/%s\n", pod.ObjectMeta.Namespace, pod.ObjectMeta.Name)
+				return self, nil
+			},
+		},
+		"to_json": {
+			mruby.ArgsReq(0), func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
+				pod := podObj.vars.pod
+				return marshalToJSON(pod, m)
+			},
+		},
+	})
 }
 
 func pods(rk *RubyKube, args []*mruby.MrbValue, m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
 	var (
 		value *mruby.MrbValue
-		class *mruby.Class
 		err   error
 	)
 
-	if class == nil {
-		class = definePodClass(rk, &kapi.PodList{}, m)
+	if podObj.class == nil {
+		podObj = podClass{
+			class: definePodClass(rk, m),
+			vars:  podInstanceVars{&kapi.Pod{}},
+		}
 	}
-	if value, err = class.New(); err != nil {
+	if podsObj.class == nil {
+		podsObj = podsClass{
+			class: definePodsClass(rk, m),
+			vars:  podsInstanceVars{&kapi.PodList{}},
+		}
+	}
+
+	if value, err = podsObj.class.New(); err != nil {
 		return nil, createException(m, err.Error())
 	}
 
-	if value, err = value.Call("fetch!"); err != nil {
+	if value, err = value.Call("get!"); err != nil {
 		return nil, createException(m, err.Error())
 	}
 
