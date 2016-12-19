@@ -97,7 +97,7 @@ func marshalToJSON(obj interface{}, m *mruby.Mrb) (mruby.Value, mruby.Value) {
 }
 
 func intToValue(m *mruby.Mrb, i int) (mruby.Value, mruby.Value) {
-	value, err := m.LoadString(fmt.Sprintf("%d", i))
+	value, err := m.FixnumValue(i)
 	if err != nil {
 		return nil, createException(m, err.Error())
 	}
