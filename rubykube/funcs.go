@@ -87,19 +87,37 @@ func defineClass(m *mruby.Mrb, name string, methods map[string]methodDefintion) 
 	return class
 }
 
+func bytesToStringSlice(data []byte, chunkSize int) (chunks []string) {
+	stringData := string(data)
+	for {
+		if len(stringData) >= chunkSize {
+			chunks, stringData = append(chunks, stringData[0:chunkSize]), stringData[chunkSize:]
+		} else {
+			chunks, stringData = append(chunks, stringData[0:len(stringData)]), ""
+			break
+		}
+	}
+	return chunks
+}
+
 func marshalToJSON(obj interface{}, m *mruby.Mrb) (mruby.Value, mruby.Value) {
 	data, err := json.MarshalIndent(obj, "", "  ")
 	if err != nil {
 		return nil, createException(m, err.Error())
 	}
-	// TODO: converting to Ruby strings fails due to truncation...
-	//value, err := m.LoadString(fmt.Sprintf("%q", data))
-	//if err != nil {
-	//	return nil, createException(m, err.Error())
-	//}
-	//return value, nil
-	fmt.Printf("%s", data)
-	return nil, nil
+
+	value, err := m.LoadString(fmt.Sprintf("@tmp = []"))
+	if err != nil {
+		return nil, createException(m, err.Error())
+	}
+	for _, chunk := range bytesToStringSlice(data, 512) {
+		_, err := m.LoadString(fmt.Sprintf("@tmp << %q", chunk))
+		if err != nil {
+			return nil, createException(m, err.Error())
+		}
+	}
+
+	return value, nil
 }
 
 func intToValue(m *mruby.Mrb, i int) (mruby.Value, mruby.Value) {
