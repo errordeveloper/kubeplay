@@ -87,40 +87,13 @@ func defineClass(m *mruby.Mrb, name string, methods map[string]methodDefintion) 
 	return class
 }
 
-func bytesToStringSlice(data []byte, chunkSize int) (chunks []string) {
-	stringData := string(data)
-	for {
-		if len(stringData) >= chunkSize {
-			chunks, stringData = append(chunks, stringData[0:chunkSize]), stringData[chunkSize:]
-		} else {
-			chunks, stringData = append(chunks, stringData[0:len(stringData)]), ""
-			break
-		}
-	}
-	return chunks
-}
-
 func marshalToJSON(obj interface{}, m *mruby.Mrb) (mruby.Value, mruby.Value) {
 	data, err := json.MarshalIndent(obj, "", "  ")
 	if err != nil {
 		return nil, createException(m, err.Error())
 	}
 
-	value, err := m.LoadString(fmt.Sprintf("@tmp = []"))
-	if err != nil {
-		return nil, createException(m, err.Error())
-	}
-
-	// MRB_PARSER_BUF_SIZE is 1024, but we get extra escaping characters,
-	// so 1024/4 seems reasonably safe...
-	for _, chunk := range bytesToStringSlice(data, 1024/4) {
-		_, err := m.LoadString(fmt.Sprintf("@tmp << %q", chunk))
-		if err != nil {
-			return nil, createException(m, err.Error())
-		}
-	}
-
-	return value, nil
+	return m.StringValue(string(data)), nil
 }
 
 func intToValue(m *mruby.Mrb, i int) (mruby.Value, mruby.Value) {
