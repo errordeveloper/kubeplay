@@ -110,7 +110,10 @@ func marshalToJSON(obj interface{}, m *mruby.Mrb) (mruby.Value, mruby.Value) {
 	if err != nil {
 		return nil, createException(m, err.Error())
 	}
-	for _, chunk := range bytesToStringSlice(data, 512) {
+
+	// MRB_PARSER_BUF_SIZE is 1024, but we get extra escaping characters,
+	// so 1024/4 seems reasonably safe...
+	for _, chunk := range bytesToStringSlice(data, 1024/4) {
 		_, err := m.LoadString(fmt.Sprintf("@tmp << %q", chunk))
 		if err != nil {
 			return nil, createException(m, err.Error())
