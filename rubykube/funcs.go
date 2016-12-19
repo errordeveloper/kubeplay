@@ -6,7 +6,8 @@ package rubykube
 */
 
 import (
-	_ "fmt"
+	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 	_ "strings"
@@ -61,4 +62,22 @@ func getenv(rk *RubyKube, m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mrub
 	}
 
 	return mruby.String(os.Getenv(args[0].String())), nil
+}
+
+func defineClass(m *mruby.Mrb, name string, methods map[string]methodDefintion) *mruby.Class {
+	class := m.DefineClass(name, nil)
+	for name, m := range methods {
+		class.DefineMethod(name, m.methodFunc, m.argSpec)
+	}
+	return class
+}
+
+func marshalToJSON(obj interface{}, m *mruby.Mrb) (mruby.Value, mruby.Value) {
+	data, err := json.MarshalIndent(obj, "", "  ")
+	if err != nil {
+		return nil, createException(m, err.Error())
+	}
+	fmt.Printf("%s", data)
+	// TODO: should really return a ruby string
+	return nil, nil
 }
