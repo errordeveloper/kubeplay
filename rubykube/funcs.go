@@ -64,10 +64,25 @@ func getenv(rk *RubyKube, m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mrub
 	return mruby.String(os.Getenv(args[0].String())), nil
 }
 
+const (
+	classMethod = iota
+	instanceMethod
+)
+
+type methodDefintion struct {
+	argSpec    mruby.ArgSpec
+	methodFunc mruby.Func
+	methodType int
+}
+
 func defineClass(m *mruby.Mrb, name string, methods map[string]methodDefintion) *mruby.Class {
 	class := m.DefineClass(name, nil)
 	for name, m := range methods {
-		class.DefineMethod(name, m.methodFunc, m.argSpec)
+		if m.methodType == classMethod {
+			class.DefineClassMethod(name, m.methodFunc, m.argSpec)
+		} else {
+			class.DefineMethod(name, m.methodFunc, m.argSpec)
+		}
 	}
 	return class
 }
@@ -77,7 +92,20 @@ func marshalToJSON(obj interface{}, m *mruby.Mrb) (mruby.Value, mruby.Value) {
 	if err != nil {
 		return nil, createException(m, err.Error())
 	}
+	// TODO: converting to Ruby strings fails due to truncation...
+	//value, err := m.LoadString(fmt.Sprintf("%q", data))
+	//if err != nil {
+	//	return nil, createException(m, err.Error())
+	//}
+	//return value, nil
 	fmt.Printf("%s", data)
-	// TODO: should really return a ruby string
 	return nil, nil
+}
+
+func intToValue(m *mruby.Mrb, i int) (mruby.Value, mruby.Value) {
+	value, err := m.LoadString(fmt.Sprintf("%d", i))
+	if err != nil {
+		return nil, createException(m, err.Error())
+	}
+	return value, nil
 }
