@@ -75,8 +75,8 @@ type methodDefintion struct {
 	methodType int
 }
 
-func defineClass(m *mruby.Mrb, name string, methods map[string]methodDefintion) *mruby.Class {
-	class := m.DefineClass(name, nil)
+func defineClass(rk *RubyKube, name string, methods map[string]methodDefintion) *mruby.Class {
+	class := rk.mrb.DefineClass(name, rk.classes.Root)
 	for name, m := range methods {
 		if m.methodType == classMethod {
 			class.DefineClassMethod(name, m.methodFunc, m.argSpec)

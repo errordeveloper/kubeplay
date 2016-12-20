@@ -18,6 +18,13 @@ var kubeconfig = flag.String("kubeconfig", "./config", "absolute path to the kub
 type RubyKube struct {
 	mrb       *mruby.Mrb
 	clientset *kubernetes.Clientset
+	classes   RubyKubeClasses
+}
+
+type RubyKubeClasses struct {
+	Root *mruby.Class
+	Pods *podsClass
+	Pod  *podClass
 }
 
 func keep(omitFuncs []string, name string) bool {
@@ -65,6 +72,10 @@ func NewRubyKube(omitFuncs []string) (*RubyKube, error) {
 	if err != nil {
 		panic(err.Error())
 	}
+
+	rk.classes = RubyKubeClasses{Root: rk.mrb.DefineClass("RubyKube", nil)}
+	rk.classes.Pods = newPodsClass(rk)
+	rk.classes.Pod = newPodClass(rk)
 
 	return rk, nil
 }
