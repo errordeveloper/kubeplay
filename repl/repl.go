@@ -69,13 +69,11 @@ func (r *Repl) Loop() error {
 			os.Exit(0)
 		}
 
-		val, err := r.rubykube.Run(line)
+		_, err = r.rubykube.Run(line)
 		line = ""
 		if err != nil {
 			fmt.Printf("+++ Error: %v\n", err)
 			continue
 		}
-
-		fmt.Println(val)
 	}
 }

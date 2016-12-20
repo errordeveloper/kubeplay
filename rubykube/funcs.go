@@ -7,7 +7,7 @@ package rubykube
 
 import (
 	"encoding/json"
-	"fmt"
+	_ "fmt"
 	"io/ioutil"
 	"os"
 	_ "strings"
@@ -94,12 +94,4 @@ func marshalToJSON(obj interface{}, m *mruby.Mrb) (mruby.Value, mruby.Value) {
 	}
 
 	return m.StringValue(string(data)), nil
-}
-
-func intToValue(m *mruby.Mrb, i int) (mruby.Value, mruby.Value) {
-	value, err := m.FixnumValue(i)
-	if err != nil {
-		return nil, createException(m, err.Error())
-	}
-	return value, nil
 }

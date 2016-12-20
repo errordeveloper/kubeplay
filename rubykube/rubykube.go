@@ -2,7 +2,7 @@ package rubykube
 
 import (
 	"flag"
-	_ "fmt"
+	"fmt"
 	"strings"
 
 	"github.com/erikh/box/builder/signal"
@@ -87,11 +87,20 @@ func (rk *RubyKube) AddVerb(name string, fn verbFunc, args mruby.ArgSpec) {
 
 // Run the script.
 func (rk *RubyKube) Run(script string) (*mruby.MrbValue, error) {
-	if _, err := rk.mrb.LoadString(script); err != nil {
+	var value *mruby.MrbValue
+
+	value, err := rk.mrb.LoadString(script)
+	if err != nil {
 		return nil, err
 	}
 
-	return mruby.String("").MrbValue(rk.mrb), nil
+	if _, err := value.Call("inspect"); err != nil {
+		return value, fmt.Errorf("could not call `#inspect` [%q]", err)
+	}
+
+	rk.mrb.TopSelf().SingletonClass().DefineMethod("_", func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) { return value, nil }, mruby.ArgsReq(0))
+
+	return value, nil
 }
 
 // Close tears down all functions of the RubyKube, preparing it for exit.

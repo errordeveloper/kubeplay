@@ -8,6 +8,7 @@ import (
 	"fmt"
 	_ "io"
 	_ "io/ioutil"
+	"math/rand"
 	_ "os"
 	_ "path"
 	_ "path/filepath"
@@ -115,6 +116,7 @@ func definePodsClass(rk *RubyKube, m *mruby.Mrb, p *podsClass) *mruby.Class {
 		},
 		"[]": {
 			mruby.ArgsReq(1), func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
+				var pod kapi.Pod
 				vars, err := p.LookupVars(self)
 				if err != nil {
 					return nil, createException(m, err.Error())
@@ -129,11 +131,21 @@ func definePodsClass(rk *RubyKube, m *mruby.Mrb, p *podsClass) *mruby.Class {
 				if n.Type() != mruby.TypeFixnum {
 					return nil, createException(m, "Argument must be a integer")
 				}
-				if n.Fixnum()+1 > len(vars.pods.Items) {
-					return nil, createException(m, "Index out of range")
+
+				l := len(vars.pods.Items)
+
+				if n.Fixnum() >= l {
+					return nil, nil
 				}
-				pod := vars.pods.Items[n.Fixnum()]
-				fmt.Printf("%d: %s/%s\n", n.Fixnum(), pod.ObjectMeta.Namespace, pod.ObjectMeta.Name)
+
+				if n.Fixnum() >= 0 {
+					pod = vars.pods.Items[n.Fixnum()]
+				} else if -(l-1) <= n.Fixnum() && n.Fixnum() < 0 {
+					pod = vars.pods.Items[l+n.Fixnum()]
+				} else {
+					return nil, nil
+				}
+				//fmt.Printf("%d: %s/%s\n", n.Fixnum(), pod.ObjectMeta.Namespace, pod.ObjectMeta.Name)
 
 				newPodObj, err := classes.Pod.New()
 				if err != nil {
@@ -161,13 +173,73 @@ func definePodsClass(rk *RubyKube, m *mruby.Mrb, p *podsClass) *mruby.Class {
 					return nil, createException(m, err.Error())
 				}
 
-				return intToValue(m, len(vars.pods.Items))
+				return m.FixnumValue(len(vars.pods.Items)), nil
+			},
+			instanceMethod,
+		},
+		"first": {
+			mruby.ArgsNone(), func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
+				vars, err := p.LookupVars(self)
+				if err != nil {
+					return nil, createException(m, err.Error())
+				}
+
+				if len(vars.pods.Items) > 0 {
+					newPodObj, err := classes.Pod.New()
+					if err != nil {
+						return nil, createException(m, err.Error())
+					}
+					newPodObj.vars.pod = &vars.pods.Items[0]
+					return newPodObj.self, nil
+				}
+				return nil, nil
+			},
+			instanceMethod,
+		},
+		"any": {
+			mruby.ArgsNone(), func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
+				vars, err := p.LookupVars(self)
+				if err != nil {
+					return nil, createException(m, err.Error())
+				}
+
+				l := len(vars.pods.Items)
+				if l > 0 {
+					newPodObj, err := classes.Pod.New()
+					if err != nil {
+						return nil, createException(m, err.Error())
+					}
+					newPodObj.vars.pod = &vars.pods.Items[rand.Intn(l)]
+					return newPodObj.self, nil
+				}
+				return nil, nil
+			},
+			instanceMethod,
+		},
+		"last": {
+			mruby.ArgsNone(), func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
+				vars, err := p.LookupVars(self)
+				if err != nil {
+					return nil, createException(m, err.Error())
+				}
+
+				l := len(vars.pods.Items)
+
+				if l > 0 {
+					newPodObj, err := classes.Pod.New()
+					if err != nil {
+						return nil, createException(m, err.Error())
+					}
+					newPodObj.vars.pod = &vars.pods.Items[l-1]
+					return newPodObj.self, nil
+				}
+				return nil, nil
 			},
 			instanceMethod,
 		},
 		"object_count": {
 			mruby.ArgsNone(), func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
-				return intToValue(m, len(p.objects))
+				return m.FixnumValue(len(p.objects)), nil
 			},
 			classMethod,
 		},
@@ -268,7 +340,7 @@ func definePodClass(rk *RubyKube, m *mruby.Mrb, p *podClass) *mruby.Class {
 		},
 		"object_count": {
 			mruby.ArgsNone(), func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
-				return intToValue(m, len(p.objects))
+				return m.FixnumValue(len(p.objects)), nil
 			},
 			classMethod,
 		},
