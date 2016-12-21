@@ -1,6 +1,7 @@
 package rubykube
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"strings"
@@ -270,6 +271,27 @@ func definePodClass(rk *RubyKube, p *podClass) *mruby.Class {
 
 				fmt.Printf("self: %s/%s\n", vars.pod.ObjectMeta.Namespace, vars.pod.ObjectMeta.Name)
 				return self, nil
+			},
+			instanceMethod,
+		},
+		"to_ruby": {
+			mruby.ArgsReq(0), func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
+				vars, err := p.LookupVars(self)
+				if err != nil {
+					return nil, createException(m, err.Error())
+				}
+
+				data, err := json.MarshalIndent(vars.pod, "", "  ")
+				if err != nil {
+					return nil, createException(m, err.Error())
+				}
+
+				var unmarshalled interface{}
+				if err := json.Unmarshal(data, &unmarshalled); err != nil {
+					return nil, createException(m, err.Error())
+				}
+				dumpJSON(unmarshalled, "pod")
+				return nil, nil
 			},
 			instanceMethod,
 		},

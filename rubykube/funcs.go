@@ -6,7 +6,6 @@ package rubykube
 */
 
 import (
-	"encoding/json"
 	_ "fmt"
 	"io/ioutil"
 	"os"
@@ -85,13 +84,4 @@ func defineClass(rk *RubyKube, name string, methods map[string]methodDefintion) 
 		}
 	}
 	return class
-}
-
-func marshalToJSON(obj interface{}, m *mruby.Mrb) (mruby.Value, mruby.Value) {
-	data, err := json.MarshalIndent(obj, "", "  ")
-	if err != nil {
-		return nil, createException(m, err.Error())
-	}
-
-	return m.StringValue(string(data)), nil
 }
