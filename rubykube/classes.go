@@ -362,21 +362,26 @@ func definePodMakerClass(rk *RubyKube, p *podMaker) *mruby.Class {
 				container := kapi.Container{}
 
 				// TODO: handle arrays of hashes, for multi-container pods
-				params, err := hashToFlatMap(args[0], []string{"name", "image"}, []string{"image"})
+				params, err := hashToFlatMap(args[0], []string{"name", "image", "namespace"}, []string{"image"})
 				if err != nil {
 					return nil, createException(m, err.Error())
 				}
+
+				var name string
 
 				// `hashToFlatMap` will validate that "image" key was given, so we don't need to
 				// check for it; we try to split it into parts to determine the name automatically
 				container.Image = params["image"]
 				imageParts := strings.Split(strings.Split(container.Image, ":")[0], "/")
-				container.Name = imageParts[len(imageParts)-1]
+				name = imageParts[len(imageParts)-1]
 
 				// if name was given, use it to override automatic name we determined from the image
-				if name, ok := params["name"]; ok {
-					container.Name = name
+				if v, ok := params["name"]; ok {
+					name = v
 				}
+
+				container.Name = name
+				labels := map[string]string{"name": name}
 
 				newPodObj, err := rk.classes.Pod.New()
 				if err != nil {
@@ -384,9 +389,14 @@ func definePodMakerClass(rk *RubyKube, p *podMaker) *mruby.Class {
 				}
 
 				pod := kapi.Pod{
+					ObjectMeta: kapi.ObjectMeta{Labels: labels},
 					Spec: kapi.PodSpec{
 						Containers: []kapi.Container{container},
 					},
+				}
+
+				if v, ok := params["namespace"]; ok {
+					pod.ObjectMeta.Namespace = v
 				}
 
 				newPodObj.vars.pod = &pod
