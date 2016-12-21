@@ -28,7 +28,7 @@ func extractStringArgs(args []*mruby.MrbValue) []string {
 	return strArgs
 }
 
-func iterateRubyHash(arg *mruby.MrbValue, fn func(*mruby.MrbValue, *mruby.MrbValue) error) error {
+func iterateHash(arg *mruby.MrbValue, fn func(*mruby.MrbValue, *mruby.MrbValue) error) error {
 	hash := arg.Hash()
 
 	// mruby does not expose native maps, just ruby primitives, so we have to
@@ -55,6 +55,44 @@ func iterateRubyHash(arg *mruby.MrbValue, fn func(*mruby.MrbValue, *mruby.MrbVal
 	}
 
 	return nil
+}
+
+func hashToFlatMap(hash *mruby.MrbValue, validKeys []string, requiredKeys []string) (map[string]string, error) {
+	params := map[string]string{}
+	validKeySet := map[string]bool{}
+
+	const invalidTypeError = "not yet implemented – found nested %q value in %q"
+
+	for _, x := range validKeys {
+		validKeySet[x] = true
+	}
+
+	if err := iterateHash(hash, func(key, value *mruby.MrbValue) error {
+		k := key.String()
+		if _, ok := validKeySet[k]; !ok {
+			return fmt.Errorf("unknown key %q – not one of %v", k, validKeys)
+		}
+
+		switch value.Type() {
+		case mruby.TypeHash:
+			return fmt.Errorf(invalidTypeError, "mruby.TypeHash", k)
+		case mruby.TypeArray:
+			return fmt.Errorf(invalidTypeError, "mruby.TypeArray", k)
+		}
+
+		params[k] = value.String()
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+
+	for _, x := range requiredKeys {
+		if _, ok := params[x]; !ok {
+			return nil, fmt.Errorf("missing required key %q", x)
+		}
+	}
+
+	return params, nil
 }
 
 func checkArgs(args []*mruby.MrbValue, l int) error {
