@@ -5,6 +5,8 @@ import (
 	"math/rand"
 	"strings"
 
+	"github.com/errordeveloper/kubeshell/rubykube/converter"
+
 	mruby "github.com/mitchellh/go-mruby"
 	kapi "k8s.io/client-go/pkg/api/v1"
 )
@@ -109,7 +111,7 @@ func definePodsClass(rk *RubyKube, p *podsClass) *mruby.Class {
 					return nil, createException(m, err.Error())
 				}
 
-				rbconv, err := newConverter(vars.pods, m)
+				rbconv, err := converter.New(vars.pods, m)
 				if err != nil {
 					return nil, createException(m, err.Error())
 				}
@@ -297,7 +299,7 @@ func definePodClass(rk *RubyKube, p *podClass) *mruby.Class {
 					return nil, createException(m, err.Error())
 				}
 
-				rbconv, err := newConverter(vars.pod, m)
+				rbconv, err := converter.New(vars.pod, m)
 				if err != nil {
 					return nil, createException(m, err.Error())
 				}
