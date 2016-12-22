@@ -120,7 +120,7 @@ func (c *Converter) appendSimpleValue(v *mruby.MrbValue) {
 		c.values = append(c.values, v)
 		return
 	}
-	c.values = append(c.values, v) // for consistency
+	c.values = append(c.values, v) // keep this for consistency
 	c.thisBranch().value = v
 }
 
@@ -142,9 +142,9 @@ func (c *Converter) thisBranch() *converterBranch {
 
 func (c *Converter) flipBranch() {
 	if c.thisBranch().parent != nil {
-		fmt.Printf("c.branchIndex = (%d => %d)\n", c.branchIndex, c.thisBranch().parent.index)
+		// fmt.Printf("c.branchIndex = (%d => %d)\n", c.branchIndex, c.thisBranch().parent.index)
 		c.branchIndex = c.thisBranch().parent.index
-		c.thisBranch().value = nil
+		c.thisBranch().value = nil // reset the value, so we don't inherit it unitentionally
 	}
 }
 
@@ -164,10 +164,6 @@ func (c *Converter) walkTree(v interface{}) {
 		// and implementation docs for both of the parsers)
 		c.appendSimpleValue(c.mrb.StringValue(fmt.Sprintf("%f", vv)))
 	case map[string]interface{}:
-		if len(vv) == 0 {
-			fmt.Printf("(walkTree: empty map?) thisBranch[%d] = %+v\n", c.branchIndex, c.thisBranch())
-			fmt.Printf("(walkTree: empty map?) thisBranch[%d].{hashKey,value} = {%+v, %+v}\n", c.branchIndex, c.thisBranch().hashKey, c.thisBranch().value)
-		}
 		c.convertMapBranch(vv)
 	case []interface{}:
 		c.convertSliceBranch(vv)
@@ -190,16 +186,8 @@ func (c *Converter) newMapBranch() *converterBranch {
 	if newBranch.parent != nil {
 		switch newBranch.parent.selfType {
 		case ConverterValueTypeHash:
-			if newBranch.parent.hashKey.String() == "securityContext" {
-				fmt.Printf("(newMapBranch: reassigning?) thisBranch[%d].{hashKey,value} = {%+v, %+v}\n", c.branchIndex, c.thisBranch().hashKey, c.thisBranch().value)
-				fmt.Printf("(newMapBranch: reassigning?) thisBranch[%d].parent.hashKey = %+v\n", c.branchIndex, newBranch.parent.hashKey)
-			}
 			newBranch.parent.self.Hash().Set(newBranch.parent.hashKey, newHash)
 		case ConverterValueTypeArray: // TODO patch go-mruby to mutate arrays
-			if newBranch.parent.hashKey.String() == "securityContext" {
-				fmt.Printf("(newMapBranch: reassigning?) thisBranch[%d].{hashKey,value} = {%+v, %+v}\n", c.branchIndex, c.thisBranch().hashKey, c.thisBranch().value)
-				fmt.Printf("(newMapBranch: reassigning?) thisBranch[%d].parent.hashKey = %+v\n", c.branchIndex, newBranch.parent.hashKey)
-			}
 			newBranch.parent.self.Hash().Set(newBranch.parent.hashKey, newHash)
 		}
 	}
@@ -217,16 +205,8 @@ func (c *Converter) newSliceBranch() *converterBranch {
 	if newBranch.parent != nil {
 		switch newBranch.parent.selfType {
 		case ConverterValueTypeHash:
-			if newBranch.parent.hashKey.String() == "securityContext" {
-				fmt.Printf("(newSliceBranch: reassigning?) thisBranch[%d].{hashKey,value} = {%+v, %+v}\n", c.branchIndex, c.thisBranch().hashKey, c.thisBranch().value)
-				fmt.Printf("(newSliceBranch: reassigning?) thisBranch[%d].parent.hashKey = %+v\n", c.branchIndex, newBranch.parent.hashKey)
-			}
 			newBranch.parent.self.Hash().Set(newBranch.parent.hashKey, newHash)
 		case ConverterValueTypeArray:
-			if newBranch.parent.hashKey.String() == "securityContext" {
-				fmt.Printf("(newSliceBranch: reassigning?) thisBranch[%d].{hashKey,value} = {%+v, %+v}\n", c.branchIndex, c.thisBranch().hashKey, c.thisBranch().value)
-				fmt.Printf("(newSliceBranch: reassigning?) thisBranch[%d].parent.hashKey = %+v\n", c.branchIndex, newBranch.parent.hashKey)
-			}
 			newBranch.parent.self.Hash().Set(newBranch.parent.hashKey, newHash)
 		}
 	}
@@ -234,34 +214,15 @@ func (c *Converter) newSliceBranch() *converterBranch {
 }
 
 func (c *Converter) convertMapBranch(x map[string]interface{}) {
-	if len(x) == 0 {
-		fmt.Printf("(convertMapBranch1: empty map?) thisBranch[%d] = %+v\n", c.branchIndex, c.thisBranch())
-		fmt.Printf("(convertMapBranch1: empty map?) thisBranch[%d].{hashKey,value} = {%+v, %+v}\n", c.branchIndex, c.thisBranch().hashKey, c.thisBranch().value)
-	}
 	thisBranch := c.newMapBranch()
-	if len(x) == 0 {
-		fmt.Printf("(convertMapBranch2: empty map?) thisBranch[%d] = %+v\n", c.branchIndex, c.thisBranch())
-		fmt.Printf("(convertMapBranch2: empty map?) thisBranch[%d].{hashKey,value} = {%+v, %+v}\n", c.branchIndex, c.thisBranch().hashKey, c.thisBranch().value)
-	}
 	for k, v := range x {
 		thisBranch.hashKey = c.mrb.StringValue(k)
 		c.walkTree(v)
 		if thisBranch.value != nil {
-			if thisBranch.hashKey.String() == "securityContext" {
-				fmt.Printf("(convertMapBranch: reassigning?) thisBranch[%d].{hashKey,value} = {%+v, %+v}\n", c.branchIndex, c.thisBranch().hashKey, c.thisBranch().value)
-			}
 			thisBranch.self.Hash().Set(thisBranch.hashKey, thisBranch.value)
 		} else {
 			fmt.Printf("(nil value?) thisBranch[%d] = %+v\n", c.branchIndex, thisBranch)
 		}
-		if k == "securityContext" {
-			fmt.Printf("k, v = %+v, %+v\n", k, v)
-			fmt.Printf("thisBranch[%d] = %+v\n", c.branchIndex, thisBranch)
-		}
-	}
-	if len(x) == 0 {
-		fmt.Printf("(convertMapBranch3: empty map?) thisBranch[%d] = %+v\n", c.branchIndex, c.thisBranch())
-		fmt.Printf("(convertMapBranch3: empty map?) thisBranch[%d].{hashKey,value} = {%+v, %+v}\n", c.branchIndex, c.thisBranch().hashKey, c.thisBranch().value)
 	}
 	c.flipBranch()
 }
@@ -272,9 +233,6 @@ func (c *Converter) convertSliceBranch(x []interface{}) {
 		thisBranch.hashKey = c.mrb.StringValue(fmt.Sprintf("%d", k))
 		c.walkTree(v)
 		if thisBranch.value != nil {
-			if thisBranch.hashKey.String() == "securityContext" {
-				fmt.Printf("(convertSliceBranch: reassigning?) thisBranch[%d].{hashKey,value} = {%+v, %+v}\n", c.branchIndex, c.thisBranch().hashKey, c.thisBranch().value)
-			}
 			thisBranch.self.Hash().Set(thisBranch.hashKey, thisBranch.value)
 		}
 	}
