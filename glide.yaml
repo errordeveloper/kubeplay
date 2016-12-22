@@ -1,0 +1,16 @@
+package: github.com/errordeveloper/kubeshell
+import:
+- package: github.com/chzyer/readline
+  version: ^1.4.0
+- package: github.com/erikh/box
+  version: ^0.3.3
+  subpackages:
+  - builder/signal
+  - log
+- package: github.com/mitchellh/go-mruby
+- package: k8s.io/client-go
+  version: ^2.0.0-alpha.1
+  subpackages:
+  - kubernetes
+  - pkg/api/v1
+  - tools/clientcmd
