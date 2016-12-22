@@ -1,16 +1,18 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/errordeveloper/kubeshell/repl"
 )
 
 func main() {
 	repl, err := repl.NewRepl()
 	if err != nil {
-		panic(err.Error())
+		panic(fmt.Errorf("repl.NewRepl: %v", err))
 	}
 	err = repl.Loop()
 	if err != nil {
-		panic(err.Error())
+		panic(fmt.Errorf("repl.Loop: %v", err))
 	}
 }

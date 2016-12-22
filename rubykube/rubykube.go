@@ -43,7 +43,7 @@ func NewRubyKube(omitFuncs []string) (*RubyKube, error) {
 
 	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
 	if err != nil {
-		panic(err.Error())
+		panic(fmt.Errorf("clientcmd.BuildConfigFromFlags: %v", err))
 	}
 
 	rk := &RubyKube{mrb: mruby.NewMrb()}
@@ -71,7 +71,7 @@ func NewRubyKube(omitFuncs []string) (*RubyKube, error) {
 
 	rk.clientset, err = kubernetes.NewForConfig(config)
 	if err != nil {
-		panic(err.Error())
+		panic(fmt.Errorf("kubernetes.NewForConfig: %v", err))
 	}
 
 	rk.classes = RubyKubeClasses{Root: rk.mrb.DefineClass("RubyKube", nil)}

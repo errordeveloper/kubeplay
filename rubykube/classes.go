@@ -1,7 +1,6 @@
 package rubykube
 
 import (
-	"encoding/json"
 	"fmt"
 	"math/rand"
 	"strings"
@@ -100,6 +99,23 @@ func definePodsClass(rk *RubyKube, p *podsClass) *mruby.Class {
 				}
 				newPodObj.vars.pod = &pod
 				return newPodObj.self, nil
+			},
+			instanceMethod,
+		},
+		"to_ruby": {
+			mruby.ArgsReq(0), func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
+				vars, err := p.LookupVars(self)
+				if err != nil {
+					return nil, createException(m, err.Error())
+				}
+
+				rbconv, err := newConverter(vars.pods, m)
+				if err != nil {
+					return nil, createException(m, err.Error())
+				}
+				rbconv.Convert()
+
+				return rbconv.Value(), nil
 			},
 			instanceMethod,
 		},
@@ -281,17 +297,13 @@ func definePodClass(rk *RubyKube, p *podClass) *mruby.Class {
 					return nil, createException(m, err.Error())
 				}
 
-				data, err := json.MarshalIndent(vars.pod, "", "  ")
+				rbconv, err := newConverter(vars.pod, m)
 				if err != nil {
 					return nil, createException(m, err.Error())
 				}
+				rbconv.Convert()
 
-				var unmarshalled interface{}
-				if err := json.Unmarshal(data, &unmarshalled); err != nil {
-					return nil, createException(m, err.Error())
-				}
-				dumpJSON(unmarshalled, "pod")
-				return nil, nil
+				return rbconv.Value(), nil
 			},
 			instanceMethod,
 		},

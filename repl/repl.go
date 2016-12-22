@@ -37,8 +37,7 @@ func NewRepl() (*Repl, error) {
 func (r *Repl) Loop() error {
 	defer func() {
 		if err := recover(); err != nil {
-			fmt.Println(err) // interpreter signal or other badness, just abort.
-			os.Exit(3)
+			panic(fmt.Errorf("repl.Loop: %v", err))
 		}
 	}()
 
