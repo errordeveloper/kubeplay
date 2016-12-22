@@ -220,8 +220,6 @@ func (c *Converter) convertMapBranch(x map[string]interface{}) {
 		c.walkTree(v)
 		if thisBranch.value != nil {
 			thisBranch.self.Hash().Set(thisBranch.hashKey, thisBranch.value)
-		} else {
-			fmt.Printf("(nil value?) thisBranch[%d] = %+v\n", c.branchIndex, thisBranch)
 		}
 	}
 	c.flipBranch()
