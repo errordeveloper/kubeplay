@@ -111,11 +111,10 @@ func definePodsClass(rk *RubyKube, p *podsClass) *mruby.Class {
 					return nil, createException(m, err.Error())
 				}
 
-				rbconv, err := converter.New(vars.pods, m)
-				if err != nil {
+				rbconv := converter.New(m)
+				if err := rbconv.Convert(vars.pods); err != nil {
 					return nil, createException(m, err.Error())
 				}
-				rbconv.Convert()
 
 				return rbconv.Value(), nil
 			},
@@ -299,11 +298,10 @@ func definePodClass(rk *RubyKube, p *podClass) *mruby.Class {
 					return nil, createException(m, err.Error())
 				}
 
-				rbconv, err := converter.New(vars.pod, m)
-				if err != nil {
+				rbconv := converter.New(m)
+				if err := rbconv.Convert(vars.pod); err != nil {
 					return nil, createException(m, err.Error())
 				}
-				rbconv.Convert()
 
 				return rbconv.Value(), nil
 			},
