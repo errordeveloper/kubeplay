@@ -58,3 +58,25 @@ kubeshell> puts _
 kubeshell> ^D
 >
 ```
+
+### Building
+
+Get the source code and build the dependencies:
+
+```bash
+go get github.com/Masterminds/glide
+go get -d github.com/errordeveloper/kubeshell
+cd $GOPATH/src/github.com/errordeveloper/kubeshell
+$GOPATH/bin/glide up
+make -C vendor/github.com/mitchellh/go-mruby libmruby.a
+go install ./rubykube
+```
+
+Build `kubeshell`:
+```bash
+go build .
+```
+
+### Credits
+
+The mruby integration was inspired by [@erikh's box](https://github.com/erikh/box), and some of the code was initially copied from there.
