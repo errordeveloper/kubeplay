@@ -5,6 +5,7 @@ import (
 	_ "errors"
 	"fmt"
 	"runtime/debug"
+	"strings"
 
 	mruby "github.com/mitchellh/go-mruby"
 )
@@ -72,63 +73,78 @@ func marshalToJSON(obj interface{}, m *mruby.Mrb) (mruby.Value, mruby.Value) {
 	return m.StringValue(string(data)), nil
 }
 
-func hashArgsToSimpleMap(hash *mruby.MrbValue, validKeys []string, requiredKeys []string) (map[string]interface{}, error) {
-	// Our map may have string, slice and map values, however there will be no nesting
-	// sub-maps are mostly to support labels and sub-slices are for command args
-	// slices of maps
-	// there exists some more complex fields, e.g. volumes, but these are too complicated
-	// to support with our simple generator, so we will have to provide a flattend version
-	// and user will have to set things manually for the start, but eventually we can provide
-	// separate helpers for volumes and other similar such stuff
+type params struct {
+	allowed   []string
+	required  []string
+	valueType mruby.ValueType
+}
+
+func getParams(hash *mruby.MrbValue, spec params) (map[string]interface{}, error) {
 	params := make(map[string]interface{})
 	validKeySet := map[string]bool{}
 
-	const invalidTypeError = "not yet implemented – found nested %q value in %q"
+	const (
+		invalidValueTypeError = "invalid value type for %q parameter – should be %s"
+		iterationError        = "failed to iterte over %s value for %q parameter – %v"
+	)
 
-	for _, x := range validKeys {
+	for _, x := range spec.allowed {
 		validKeySet[x] = true
 	}
 
-	if err := iterateHash(hash, func(key, value *mruby.MrbValue) error {
-		k1 := key.String()
-		if _, ok := validKeySet[k1]; !ok {
-			return fmt.Errorf("unknown key %q – not one of %v", k1, validKeys)
+	// Our params may have string, slice and map values, however there will be no nesting;
+	// maps and slices are mostly to support labels and command args
+	// there exist some more complex fields, e.g. volumes, but these are too complicated
+	// to support with our simple generator, so we will have to provide a flattend version
+	// and user will have to set things manually for the start, but eventually we can provide
+	// separate helpers for volumes and other similar such stuff
+
+	if err := iterateHash(hash, func(key0, value *mruby.MrbValue) error {
+		k0 := key0.String()
+		if _, ok := validKeySet[k0]; !ok {
+			return fmt.Errorf("unknown parameter %q – not one of %v", k0, spec.allowed)
 		}
 
-		switch value.Type() {
+		switch spec.valueType {
+		case mruby.TypeString:
+			if value.Type() != spec.valueType {
+				return fmt.Errorf(invalidValueTypeError, k0, "a string")
+			}
+			v := value.String()
+			if strings.TrimSpace(v) == "" {
+				return fmt.Errorf("found invalid or empty string value for %q parameter", k0)
+			}
+			params[k0] = value.String()
 		case mruby.TypeHash:
 			out := map[string]string{}
-			if err := iterateHash(value, func(key, value *mruby.MrbValue) error {
-				k2 := key.String()
-				// we don't validate keys in the scond level here, it's mostly for labels
-				// and arbitrary keys are allowed there
-				switch value.Type() {
-				case mruby.TypeHash:
-					return fmt.Errorf(invalidTypeError, "mruby.TypeHash", k1+"."+k2)
-				case mruby.TypeArray:
-					return fmt.Errorf(invalidTypeError, "mruby.TypeArray", k1+"."+k2)
-				default:
-					out[k2] = value.String()
-					return nil
-				}
-			}); err != nil {
-				return err
+			if value.Type() != spec.valueType {
+				return fmt.Errorf(invalidValueTypeError, k0, "a hash")
 			}
-			params[k1] = out
+			if err := iterateHash(hash, func(key1, value *mruby.MrbValue) error {
+				k1 := key1.String()
+				if value.Type() != mruby.TypeString {
+					return fmt.Errorf(invalidValueTypeError, k0+"::"+k1, "a string")
+				}
+				out[k1] = value.String()
+				return nil
+			}); err != nil {
+				return fmt.Errorf(iterationError, "hash", k0, err)
+			}
+			params[k0] = out
 		case mruby.TypeArray:
-			return fmt.Errorf(invalidTypeError, "mruby.TypeArray", k1)
-		default:
-			params[k1] = value.String()
+			if value.Type() != spec.valueType {
+				return fmt.Errorf(invalidValueTypeError, k0, "an array")
+			}
 		}
 
 		return nil
 	}); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parse given parameters – %v", err)
 	}
 
-	for _, x := range requiredKeys {
+	for _, x := range spec.required {
 		if _, ok := params[x]; !ok {
-			return nil, fmt.Errorf("missing required key %q", x)
+			return nil, fmt.Errorf("missing required parameter %q", x)
 		}
 	}
 
