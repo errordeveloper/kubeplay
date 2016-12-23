@@ -72,8 +72,15 @@ func marshalToJSON(obj interface{}, m *mruby.Mrb) (mruby.Value, mruby.Value) {
 	return m.StringValue(string(data)), nil
 }
 
-func hashToFlatMap(hash *mruby.MrbValue, validKeys []string, requiredKeys []string) (map[string]string, error) {
-	params := map[string]string{}
+func hashArgsToSimpleMap(hash *mruby.MrbValue, validKeys []string, requiredKeys []string) (map[string]interface{}, error) {
+	// Our map may have string, slice and map values, however there will be no nesting
+	// sub-maps are mostly to support labels and sub-slices are for command args
+	// slices of maps
+	// there exists some more complex fields, e.g. volumes, but these are too complicated
+	// to support with our simple generator, so we will have to provide a flattend version
+	// and user will have to set things manually for the start, but eventually we can provide
+	// separate helpers for volumes and other similar such stuff
+	params := make(map[string]interface{})
 	validKeySet := map[string]bool{}
 
 	const invalidTypeError = "not yet implemented – found nested %q value in %q"
@@ -83,19 +90,37 @@ func hashToFlatMap(hash *mruby.MrbValue, validKeys []string, requiredKeys []stri
 	}
 
 	if err := iterateHash(hash, func(key, value *mruby.MrbValue) error {
-		k := key.String()
-		if _, ok := validKeySet[k]; !ok {
-			return fmt.Errorf("unknown key %q – not one of %v", k, validKeys)
+		k1 := key.String()
+		if _, ok := validKeySet[k1]; !ok {
+			return fmt.Errorf("unknown key %q – not one of %v", k1, validKeys)
 		}
 
 		switch value.Type() {
 		case mruby.TypeHash:
-			return fmt.Errorf(invalidTypeError, "mruby.TypeHash", k)
+			out := map[string]string{}
+			if err := iterateHash(value, func(key, value *mruby.MrbValue) error {
+				k2 := key.String()
+				// we don't validate keys in the scond level here, it's mostly for labels
+				// and arbitrary keys are allowed there
+				switch value.Type() {
+				case mruby.TypeHash:
+					return fmt.Errorf(invalidTypeError, "mruby.TypeHash", k1+"."+k2)
+				case mruby.TypeArray:
+					return fmt.Errorf(invalidTypeError, "mruby.TypeArray", k1+"."+k2)
+				default:
+					out[k2] = value.String()
+					return nil
+				}
+			}); err != nil {
+				return err
+			}
+			params[k1] = out
 		case mruby.TypeArray:
-			return fmt.Errorf(invalidTypeError, "mruby.TypeArray", k)
+			return fmt.Errorf(invalidTypeError, "mruby.TypeArray", k1)
+		default:
+			params[k1] = value.String()
 		}
 
-		params[k] = value.String()
 		return nil
 	}); err != nil {
 		return nil, err
