@@ -64,6 +64,22 @@ func iterateHash(arg *mruby.MrbValue, fn func(*mruby.MrbValue, *mruby.MrbValue) 
 	return nil
 }
 
+func iterateArray(arg *mruby.MrbValue, fn func(int, *mruby.MrbValue) error) error {
+	array := arg.Array()
+	for i := 0; i < array.Len(); i++ {
+		value, err := array.Get(i)
+		if err != nil {
+			return err
+		}
+
+		if err := fn(i, value); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func marshalToJSON(obj interface{}, m *mruby.Mrb) (mruby.Value, mruby.Value) {
 	data, err := json.MarshalIndent(obj, "", "  ")
 	if err != nil {
@@ -76,21 +92,28 @@ func marshalToJSON(obj interface{}, m *mruby.Mrb) (mruby.Value, mruby.Value) {
 type params struct {
 	allowed   []string
 	required  []string
+	skipKnown []string
 	valueType mruby.ValueType
+}
+
+func sliceToSet(slice []string) map[string]bool {
+	set := map[string]bool{}
+	for _, x := range slice {
+		set[x] = true
+	}
+	return set
 }
 
 func getParams(hash *mruby.MrbValue, spec params) (map[string]interface{}, error) {
 	params := make(map[string]interface{})
-	validKeySet := map[string]bool{}
+	validKeys := append(spec.allowed, spec.skipKnown...)
+	validKeySet := sliceToSet(validKeys)
+	skipKeySet := sliceToSet(spec.skipKnown)
 
 	const (
 		invalidValueTypeError = "invalid value type for %q parameter – should be %s"
 		iterationError        = "failed to iterte over %s value for %q parameter – %v"
 	)
-
-	for _, x := range spec.allowed {
-		validKeySet[x] = true
-	}
 
 	// Our params may have string, slice and map values, however there will be no nesting;
 	// maps and slices are mostly to support labels and command args
@@ -102,7 +125,10 @@ func getParams(hash *mruby.MrbValue, spec params) (map[string]interface{}, error
 	if err := iterateHash(hash, func(key0, value *mruby.MrbValue) error {
 		k0 := key0.String()
 		if _, ok := validKeySet[k0]; !ok {
-			return fmt.Errorf("unknown parameter %q – not one of %v", k0, spec.allowed)
+			return fmt.Errorf("unknown parameter %q – not one of %v", k0, validKeys)
+		}
+		if _, ok := skipKeySet[k0]; ok {
+			return nil
 		}
 
 		switch spec.valueType {
@@ -120,10 +146,10 @@ func getParams(hash *mruby.MrbValue, spec params) (map[string]interface{}, error
 			if value.Type() != spec.valueType {
 				return fmt.Errorf(invalidValueTypeError, k0, "a hash")
 			}
-			if err := iterateHash(hash, func(key1, value *mruby.MrbValue) error {
+			if err := iterateHash(value, func(key1, value *mruby.MrbValue) error {
 				k1 := key1.String()
 				if value.Type() != mruby.TypeString {
-					return fmt.Errorf(invalidValueTypeError, k0+"::"+k1, "a string")
+					return fmt.Errorf(invalidValueTypeError, fmt.Sprintf("%s::%s", k0, k1), "a string")
 				}
 				out[k1] = value.String()
 				return nil
@@ -132,9 +158,20 @@ func getParams(hash *mruby.MrbValue, spec params) (map[string]interface{}, error
 			}
 			params[k0] = out
 		case mruby.TypeArray:
+			out := &[]string{}
 			if value.Type() != spec.valueType {
 				return fmt.Errorf(invalidValueTypeError, k0, "an array")
 			}
+			if err := iterateArray(value, func(i1 int, value *mruby.MrbValue) error {
+				if value.Type() != mruby.TypeString {
+					return fmt.Errorf(invalidValueTypeError, fmt.Sprintf("%s[%d]", k0, i1), "a string")
+				}
+				*out = append(*out, value.String())
+				return nil
+			}); err != nil {
+				return fmt.Errorf(iterationError, "array", k0, err)
+			}
+			params[k0] = *out
 		}
 
 		return nil

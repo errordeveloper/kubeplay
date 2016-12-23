@@ -394,11 +394,11 @@ func definePodMakerClass(rk *RubyKube, p *podMaker) *mruby.Class {
 				}
 
 				// TODO: handle arrays of hashes, for multi-container pods
-
 				stringParams, err := getParams(args[0],
 					params{
-						allowed:   []string{"name", "image", "namespace"},
+						allowed:   []string{"image", "name", "namespace"},
 						required:  []string{"image"},
+						skipKnown: []string{"labels", "env", "command"},
 						valueType: mruby.TypeString,
 					},
 				)
@@ -407,9 +407,33 @@ func definePodMakerClass(rk *RubyKube, p *podMaker) *mruby.Class {
 					return nil, createException(m, err.Error())
 				}
 
-				//allowedHashParams, requiredHashParams := []string{"labels", "env"}, []string{}
+				hashParams, err := getParams(args[0],
+					params{
+						allowed:   []string{"labels", "env"},
+						required:  []string{},
+						skipKnown: []string{"image", "name", "namespace", "command"},
+						valueType: mruby.TypeHash,
+					},
+				)
 
-				//allowedArrayParams, requiredArrayParams := []string{"command"}, []string{}
+				if err != nil {
+					return nil, createException(m, err.Error())
+				}
+
+				arrayParams, err := getParams(args[0],
+					params{
+						allowed:   []string{"command"},
+						required:  []string{},
+						skipKnown: []string{"image", "name", "namespace", "labels", "env"},
+						valueType: mruby.TypeArray,
+					},
+				)
+
+				if err != nil {
+					return nil, createException(m, err.Error())
+				}
+
+				fmt.Printf("stringParams=%+v\nhashParams=%+v\narrayParams=%+v\n", stringParams, hashParams, arrayParams)
 
 				container := kapi.Container{}
 				var name string
