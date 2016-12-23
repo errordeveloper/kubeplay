@@ -13,7 +13,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-var kubeconfig = flag.String("kubeconfig", "./config", "absolute path to the kubeconfig file")
+var kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
 
 type RubyKube struct {
 	mrb       *mruby.Mrb
