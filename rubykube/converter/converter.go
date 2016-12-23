@@ -7,14 +7,10 @@ import (
 	mruby "github.com/mitchellh/go-mruby"
 )
 
-const (
-	valueTypeHash = iota
-	valueTypeArray
-)
-
 type converterBranch struct {
-	self     *mruby.MrbValue
-	selfType int              // this to say whether we are working with a hash or an array
+	self *mruby.MrbValue
+	// TODO get rid of selfType and use self.Type() once we moved to proper arrays
+	selfType mruby.ValueType  // this to say whether we are working with a hash or an array
 	parent   *converterBranch // pointer to the parent, so we know where to go back once done
 	hashKey  *mruby.MrbValue  // hash key to use for the current value (if it is in a hash)
 	value    *mruby.MrbValue  // current value we are handling
@@ -139,7 +135,7 @@ func (c *Converter) walkTree(v interface{}) {
 }
 
 func (c *Converter) newMapBranch() *converterBranch {
-	newBranch := &converterBranch{selfType: valueTypeHash}
+	newBranch := &converterBranch{selfType: mruby.TypeHash}
 	newHash, err := c.mrb.LoadString("{}")
 	if err != nil {
 		panic(fmt.Errorf("newMapBranch: %v", err))
@@ -148,9 +144,9 @@ func (c *Converter) newMapBranch() *converterBranch {
 	c.appendBranch(newBranch)
 	if newBranch.parent != nil {
 		switch newBranch.parent.selfType {
-		case valueTypeHash:
+		case mruby.TypeHash:
 			newBranch.parent.self.Hash().Set(newBranch.parent.hashKey, newHash)
-		case valueTypeArray: // TODO patch go-mruby to mutate arrays
+		case mruby.TypeArray: // TODO patch go-mruby to mutate arrays
 			newBranch.parent.self.Hash().Set(newBranch.parent.hashKey, newHash)
 		}
 	}
@@ -170,7 +166,7 @@ func (c *Converter) convertMapBranch(x map[string]interface{}) {
 }
 
 func (c *Converter) newSliceBranch() *converterBranch {
-	newBranch := &converterBranch{selfType: valueTypeArray}
+	newBranch := &converterBranch{selfType: mruby.TypeArray}
 	newHash, err := c.mrb.LoadString("{}")
 	if err != nil {
 		panic(fmt.Errorf("newSliceBranch: %v", err))
@@ -179,9 +175,9 @@ func (c *Converter) newSliceBranch() *converterBranch {
 	c.appendBranch(newBranch)
 	if newBranch.parent != nil {
 		switch newBranch.parent.selfType {
-		case valueTypeHash:
+		case mruby.TypeHash:
 			newBranch.parent.self.Hash().Set(newBranch.parent.hashKey, newHash)
-		case valueTypeArray:
+		case mruby.TypeArray:
 			newBranch.parent.self.Hash().Set(newBranch.parent.hashKey, newHash)
 		}
 	}
