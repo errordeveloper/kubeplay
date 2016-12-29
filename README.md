@@ -1,4 +1,4 @@
-# `kubeshell` – a new way to interact with Kubernetes API from the terminal
+# `kubeshell` – a new way to interact with Kubernetes
 
 ## Usage: easy REPL with Ruby syntax
 
