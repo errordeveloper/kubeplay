@@ -26,6 +26,7 @@ kubeshell> puts @pod.to_json # output the pod definition in JSON
 }
 kubeshell> puts @pod.to_ruby # output the same as a Ruby hash
 { ... }
+kubeshell> @pod.delete!
 kubeshell> ^D
 > 
 ```
