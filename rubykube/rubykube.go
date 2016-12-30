@@ -111,7 +111,13 @@ func (rk *RubyKube) Run(script string) (*mruby.MrbValue, error) {
 		return value, fmt.Errorf("could not call `#inspect` [%q]", err)
 	}
 
-	rk.mrb.TopSelf().SingletonClass().DefineMethod("_", func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) { return value, nil }, mruby.ArgsReq(0))
+	getLastValue := func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) { return value, nil }
+
+	if value.Type() != mruby.TypeNil {
+		rk.mrb.TopSelf().SingletonClass().DefineMethod("_", getLastValue, mruby.ArgsReq(0))
+	}
+
+	rk.mrb.TopSelf().SingletonClass().DefineMethod("$?", getLastValue, mruby.ArgsReq(0))
 
 	return value, nil
 }
