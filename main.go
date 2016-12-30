@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/errordeveloper/kubeshell/repl"
+	"github.com/errordeveloper/kubeplay/repl"
 )
 
 func main() {

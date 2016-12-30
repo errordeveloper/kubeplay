@@ -1,13 +1,13 @@
-# `kubeshell` – a new way to interact with Kubernetes
+# `kubeplay` – a new way to interact with Kubernetes
 
 ## Usage: easy REPL with Ruby syntax
 
 ```console
-> ./kubeshell -kubeconfig ~/.kube/config
-kubeshell> pods # list pods in the cluster
+> ./kubeplay -kubeconfig ~/.kube/config
+kubeplay> pods # list pods in the cluster
 <list-of-pods>
-kubeshell> @pod = _.any # pick a random pod from the list
-kubeshell> puts @pod.to_json # output the pod definition in JSON
+kubeplay> @pod = _.any # pick a random pod from the list
+kubeplay> puts @pod.to_json # output the pod definition in JSON
 {
   "metadata": {
     ...
@@ -24,20 +24,20 @@ kubeshell> puts @pod.to_json # output the pod definition in JSON
     ...
   }
 }
-kubeshell> puts @pod.to_ruby # output the same as a Ruby hash
+kubeplay> puts @pod.to_ruby # output the same as a Ruby hash
 { ... }
-kubeshell> @pod.delete!
-kubeshell> ^D
+kubeplay> @pod.delete!
+kubeplay> ^D
 > 
 ```
 
 ## Usage: object generator with minimal input
 
 ```console
-> ./kubeshell -kubeconfig ~/.kube/config
-kubeshell> new.pod!(image: "errordeveloper/foo:latest").to_json
+> ./kubeplay -kubeconfig ~/.kube/config
+kubeplay> new.pod!(image: "errordeveloper/foo:latest").to_json
 +++ Execute: new 
-kubeshell> puts _
+kubeplay> puts _
 {
   "metadata": {
     "creationTimestamp": null,
@@ -56,7 +56,7 @@ kubeshell> puts _
   },
   "status": {}
 }
-kubeshell> ^D
+kubeplay> ^D
 >
 ```
 
@@ -66,14 +66,14 @@ Get the source code and build the dependencies:
 
 ```bash
 go get github.com/Masterminds/glide
-go get -d github.com/errordeveloper/kubeshell
-cd $GOPATH/src/github.com/errordeveloper/kubeshell
+go get -d github.com/errordeveloper/kubeplay
+cd $GOPATH/src/github.com/errordeveloper/kubeplay
 $GOPATH/bin/glide up
 make -C vendor/github.com/mitchellh/go-mruby libmruby.a
 go install ./rubykube
 ```
 
-Build `kubeshell`:
+Build `kubeplay`:
 ```bash
 go build .
 ```

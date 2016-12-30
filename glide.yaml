@@ -1,4 +1,4 @@
-package: github.com/errordeveloper/kubeshell
+package: github.com/errordeveloper/kubeplay
 import:
 - package: github.com/chzyer/readline
   version: ^1.4.0

@@ -5,7 +5,7 @@ import (
 	"math/rand"
 	"strings"
 
-	"github.com/errordeveloper/kubeshell/rubykube/converter"
+	"github.com/errordeveloper/kubeplay/rubykube/converter"
 
 	mruby "github.com/mitchellh/go-mruby"
 	kapi "k8s.io/client-go/pkg/api/v1"

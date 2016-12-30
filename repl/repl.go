@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/chzyer/readline"
-	"github.com/errordeveloper/kubeshell/rubykube"
+	"github.com/errordeveloper/kubeplay/rubykube"
 )
 
 // Repl encapsulates a series of items used to create a read-evaluate-print
@@ -19,7 +19,7 @@ type Repl struct {
 
 // NewRepl constructs a new Repl.
 func NewRepl() (*Repl, error) {
-	rl, err := readline.New("kubeshell> ")
+	rl, err := readline.New("kubeplay> ")
 	if err != nil {
 		return nil, err
 	}
