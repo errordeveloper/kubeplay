@@ -271,7 +271,7 @@ func definePodClass(rk *RubyKube, p *podClass) *mruby.Class {
 					return nil, createException(m, err.Error())
 				}
 
-				vars.pod, err = rk.clientset.Core().Pods("").Get(vars.pod.ObjectMeta.Name)
+				vars.pod, err = rk.clientset.Core().Pods(vars.pod.ObjectMeta.Namespace).Get(vars.pod.ObjectMeta.Name)
 				if err != nil {
 					return nil, createException(m, err.Error())
 				}
@@ -287,6 +287,21 @@ func definePodClass(rk *RubyKube, p *podClass) *mruby.Class {
 				}
 
 				fmt.Printf("self: %s/%s\n", vars.pod.ObjectMeta.Namespace, vars.pod.ObjectMeta.Name)
+				return self, nil
+			},
+			instanceMethod,
+		},
+		"delete!": {
+			mruby.ArgsNone(), func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
+				vars, err := p.LookupVars(self)
+				if err != nil {
+					return nil, createException(m, err.Error())
+				}
+
+				if err = rk.clientset.Core().Pods(vars.pod.ObjectMeta.Namespace).Delete(vars.pod.ObjectMeta.Name, &kapi.DeleteOptions{}); err != nil {
+					return nil, createException(m, err.Error())
+				}
+
 				return self, nil
 			},
 			instanceMethod,
