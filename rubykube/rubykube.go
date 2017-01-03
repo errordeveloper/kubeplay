@@ -89,6 +89,9 @@ func NewRubyKube(omitFuncs []string, rl *readline.Instance) (*RubyKube, error) {
 	rk.classes.PodMaker = newPodMakerClass(rk)
 
 	rk.SetNamespace("*")
+	if err := rk.applyPatches(); err != nil {
+		return nil, err
+	}
 
 	return rk, nil
 }
