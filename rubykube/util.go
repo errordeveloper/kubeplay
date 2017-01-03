@@ -96,6 +96,11 @@ type params struct {
 	valueType mruby.ValueType
 }
 
+type paramsCollection struct {
+	params    map[string]interface{}
+	valueType mruby.ValueType
+}
+
 func sliceToSet(slice []string) map[string]bool {
 	set := map[string]bool{}
 	for _, x := range slice {
@@ -104,7 +109,15 @@ func sliceToSet(slice []string) map[string]bool {
 	return set
 }
 
-func getParams(hash *mruby.MrbValue, spec params) (map[string]interface{}, error) {
+func ValidString(value *mruby.MrbValue) *string {
+	v := value.String()
+	if strings.TrimSpace(v) == "" {
+		return nil
+	}
+	return &v
+}
+
+func NewParamsCollection(hash *mruby.MrbValue, spec params) (*paramsCollection, error) {
 	params := make(map[string]interface{})
 	validKeys := append(spec.allowed, spec.skipKnown...)
 	validKeySet := sliceToSet(validKeys)
@@ -136,11 +149,11 @@ func getParams(hash *mruby.MrbValue, spec params) (map[string]interface{}, error
 			if value.Type() != spec.valueType {
 				return fmt.Errorf(invalidValueTypeError, k0, "a string")
 			}
-			v := value.String()
-			if strings.TrimSpace(v) == "" {
+			v := ValidString(value)
+			if v == nil {
 				return fmt.Errorf("found invalid or empty string value for %q parameter", k0)
 			}
-			params[k0] = value.String()
+			params[k0] = *v
 		case mruby.TypeHash:
 			out := map[string]string{}
 			if value.Type() != spec.valueType {
@@ -185,7 +198,43 @@ func getParams(hash *mruby.MrbValue, spec params) (map[string]interface{}, error
 		}
 	}
 
-	return params, nil
+	return &paramsCollection{params, spec.valueType}, nil
+}
+
+func (c *paramsCollection) ToMapOfStrings() map[string]string {
+	if c.valueType != mruby.TypeString {
+		return nil
+	}
+
+	out := map[string]string{}
+	for k, v := range c.params {
+		out[k] = v.(string)
+	}
+	return out
+}
+
+func (c *paramsCollection) ToMapOfMapsOfStrings() map[string]map[string]string {
+	if c.valueType != mruby.TypeHash {
+		return nil
+	}
+
+	out := map[string]map[string]string{}
+	for k, v := range c.params {
+		out[k] = v.(map[string]string)
+	}
+	return out
+}
+
+func (c *paramsCollection) ToMapOfSlicesOfStrings() map[string][]string {
+	if c.valueType != mruby.TypeArray {
+		return nil
+	}
+
+	out := map[string][]string{}
+	for k, v := range c.params {
+		out[k] = v.([]string)
+	}
+	return out
 }
 
 func checkArgs(args []*mruby.MrbValue, l int) error {

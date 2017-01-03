@@ -13,24 +13,24 @@ import (
 // Repl encapsulates a series of items used to create a read-evaluate-print
 // loop so that end users can manually enter build instructions.
 type Repl struct {
-	readline *readline.Instance
 	rubykube *rubykube.RubyKube
+	readline *readline.Instance
 }
 
 // NewRepl constructs a new Repl.
 func NewRepl() (*Repl, error) {
-	rl, err := readline.New("kubeplay> ")
+	rl, err := readline.New("kubeplay ()> ")
 	if err != nil {
 		return nil, err
 	}
 
-	rk, err := rubykube.NewRubyKube([]string{})
+	rk, err := rubykube.NewRubyKube([]string{}, rl)
 	if err != nil {
 		rl.Close()
 		return nil, err
 	}
 
-	return &Repl{readline: rl, rubykube: rk}, nil
+	return &Repl{rubykube: rk, readline: rl}, nil
 }
 
 // Loop runs the loop. Returns nil on io.EOF, otherwise errors are forwarded.

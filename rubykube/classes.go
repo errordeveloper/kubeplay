@@ -40,7 +40,7 @@ func definePodsClass(rk *RubyKube, p *podsClass) *mruby.Class {
 					return nil, createException(m, err.Error())
 				}
 
-				vars.pods, err = rk.clientset.Core().Pods("").List(kapi.ListOptions{})
+				vars.pods, err = rk.clientset.Core().Pods(rk.GetNamespace()).List(kapi.ListOptions{})
 				if err != nil {
 					return nil, createException(m, err.Error())
 				}
@@ -408,8 +408,12 @@ func definePodMakerClass(rk *RubyKube, p *podMaker) *mruby.Class {
 					return nil, createException(m, err.Error())
 				}
 
+				if args[0].Type() != mruby.TypeHash {
+					return nil, createException(m, "First argument must be a hash")
+				}
+
 				// TODO: handle arrays of hashes, for multi-container pods
-				stringParams, err := getParams(args[0],
+				stringParamsCol, err := NewParamsCollection(args[0],
 					params{
 						allowed:   []string{"image", "name", "namespace"},
 						required:  []string{"image"},
@@ -422,7 +426,9 @@ func definePodMakerClass(rk *RubyKube, p *podMaker) *mruby.Class {
 					return nil, createException(m, err.Error())
 				}
 
-				hashParams, err := getParams(args[0],
+				stringParams := stringParamsCol.ToMapOfStrings()
+
+				hashParamsCol, err := NewParamsCollection(args[0],
 					params{
 						allowed:   []string{"labels", "env"},
 						required:  []string{},
@@ -435,7 +441,7 @@ func definePodMakerClass(rk *RubyKube, p *podMaker) *mruby.Class {
 					return nil, createException(m, err.Error())
 				}
 
-				arrayParams, err := getParams(args[0],
+				arrayParamsCol, err := NewParamsCollection(args[0],
 					params{
 						allowed:   []string{"command"},
 						required:  []string{},
@@ -448,20 +454,20 @@ func definePodMakerClass(rk *RubyKube, p *podMaker) *mruby.Class {
 					return nil, createException(m, err.Error())
 				}
 
-				fmt.Printf("stringParams=%+v\nhashParams=%+v\narrayParams=%+v\n", stringParams, hashParams, arrayParams)
+				fmt.Printf("stringParams=%+v\nhashParams=%+v\narrayParams=%+v\n", stringParams, hashParamsCol.ToMapOfMapsOfStrings(), arrayParamsCol.ToMapOfSlicesOfStrings())
 
 				container := kapi.Container{}
 				var name string
 
 				// `hashArgsToSimpleMap` will validate that "image" key was given, so we don't need to
 				// check for it; we try to split it into parts to determine the name automatically
-				container.Image = stringParams["image"].(string)
+				container.Image = stringParams["image"]
 				imageParts := strings.Split(strings.Split(container.Image, ":")[0], "/")
 				name = imageParts[len(imageParts)-1]
 
 				// if name was given, use it to override automatic name we determined from the image
 				if v, ok := stringParams["name"]; ok {
-					name = v.(string)
+					name = v
 				}
 
 				container.Name = name
@@ -480,7 +486,7 @@ func definePodMakerClass(rk *RubyKube, p *podMaker) *mruby.Class {
 				}
 
 				if v, ok := stringParams["namespace"]; ok {
-					pod.ObjectMeta.Namespace = v.(string)
+					pod.ObjectMeta.Namespace = v
 				}
 
 				newPodObj.vars.pod = &pod

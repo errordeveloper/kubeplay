@@ -5,7 +5,7 @@ package rubykube
 */
 
 import (
-	_ "fmt"
+	"fmt"
 
 	mruby "github.com/mitchellh/go-mruby"
 )
@@ -19,8 +19,10 @@ type verbDefinition struct {
 
 // verbJumpTable is the dispatch instructions sent to the builder at preparation time.
 var verbJumpTable = map[string]verbDefinition{
-	"new":  {newMaker, mruby.ArgsReq(1)},
-	"pods": {pods, mruby.ArgsReq(0)},
+	"new":       {newMaker, mruby.ArgsReq(1)},
+	"pods":      {pods, mruby.ArgsReq(0)},
+	"using":     {using, mruby.ArgsReq(0) | mruby.ArgsOpt(2)},
+	"namespace": {namespace, mruby.ArgsReq(0) | mruby.ArgsOpt(2)},
 }
 
 type verbFunc func(rk *RubyKube, args []*mruby.MrbValue, m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value)
@@ -54,4 +56,61 @@ func pods(rk *RubyKube, args []*mruby.MrbValue, m *mruby.Mrb, self *mruby.MrbVal
 		return nil, createException(m, err.Error())
 	}
 	return value, nil
+}
+
+func using(rk *RubyKube, args []*mruby.MrbValue, m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
+	if len(args) == 0 {
+		fmt.Println("%+v", rk.state)
+		return nil, nil
+
+	}
+
+	if args[0].Type() != mruby.TypeHash {
+		return nil, createException(m, "First argument must be a hash")
+	}
+
+	pc, err := NewParamsCollection(args[0],
+		params{
+			allowed:   []string{"namespace", "cluster", "context"},
+			required:  []string{"namespace"},
+			valueType: mruby.TypeString,
+		},
+	)
+
+	if err != nil {
+		return nil, createException(m, err.Error())
+	}
+
+	p := pc.ToMapOfStrings()
+
+	rk.SetNamespace(p["namespace"])
+
+	if len(args) == 2 {
+		//TODO: allow calling with a block
+	}
+
+	return nil, nil
+}
+
+func namespace(rk *RubyKube, args []*mruby.MrbValue, m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
+	if len(args) == 0 {
+		return m.StringValue(rk.state.Namespace), nil
+	}
+
+	if args[0].Type() != mruby.TypeString {
+		return nil, createException(m, "First argument must be a string")
+	}
+
+	ns := ValidString(args[0])
+	if ns == nil {
+		return nil, createException(m, "First argument must be a non-empty string")
+	}
+
+	rk.SetNamespace(*ns)
+
+	if len(args) == 2 {
+		//TODO: allow calling with a block
+	}
+
+	return nil, nil
 }
