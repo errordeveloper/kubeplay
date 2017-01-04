@@ -40,7 +40,10 @@ func definePodsClass(rk *RubyKube, p *podsClass) *mruby.Class {
 					return nil, createException(m, err.Error())
 				}
 
-				var ns string
+				var (
+					ns          string
+					listOptions kapi.ListOptions
+				)
 
 				args := m.GetArgs()
 				fmt.Printf("args=%+v\n", args)
@@ -55,18 +58,94 @@ func definePodsClass(rk *RubyKube, p *podsClass) *mruby.Class {
 				// pods "bar-*"
 				// pods "*/bar-*"
 
+				hasNameGlob := false
+				hasSelectors := false
+
+				parseNameGlob := func(arg *mruby.MrbValue) error {
+					s := arg.String()
+					switch {
+					case podsWithinNamespace.MatchString(s):
+						getNamedMatch(podsWithinNamespace, s, "namespace", &ns)
+					default:
+						fmt.Printf("Invalid glob expression - try `pods \"<namespace>/\"`, `pods \"*/\"` or `pods \"*/foo-*\"`")
+					}
+
+					hasNameGlob = true
+					return nil
+				}
+
+				parseSelectors := func(arg *mruby.MrbValue) error {
+					pc, err := NewParamsCollection(arg,
+						params{
+							allowed:   []string{"labels", "fields"},
+							required:  []string{},
+							valueType: mruby.TypeString,
+						},
+					)
+
+					if err != nil {
+						return err
+					}
+
+					p := pc.ToMapOfStrings()
+
+					if v, ok := p["labels"]; ok {
+						listOptions.LabelSelector = v
+					}
+					if v, ok := p["fields"]; ok {
+						listOptions.FieldSelector = v
+					}
+
+					hasSelectors = true
+					return nil
+				}
+
 				if len(args) >= 1 {
-					if args[0].Type() == mruby.TypeString {
-						s := args[0].String()
-						fmt.Println("One argument given and it is a string!")
-						switch {
-						case podsWithinNamespace.MatchString(s):
-							getNamedMatch(podsWithinNamespace, s, "namespace", &ns)
+					switch args[0].Type() {
+					case mruby.TypeString:
+						if err := parseNameGlob(args[0]); err != nil {
+							return nil, createException(m, err.Error())
 						}
+					case mruby.TypeHash:
+						if err := parseSelectors(args[0]); err != nil {
+							return nil, createException(m, err.Error())
+						}
+					case mruby.TypeArray:
+						// TODO: we could allow users to collect object matching multiple globs
+						return nil, createException(m, "Not yet implemented!")
 					}
 				}
 
-				vars.pods, err = rk.clientset.Core().Pods(rk.GetNamespace(ns)).List(kapi.ListOptions{})
+				if len(args) >= 2 {
+					secondArgError := func(kind string) (mruby.Value, mruby.Value) {
+						return nil, createException(m, "Found second "+kind+" argument, only single one is allowed - use array notation for mulptiple queries")
+					}
+
+					switch args[1].Type() {
+					case mruby.TypeString:
+						if hasNameGlob {
+							return secondArgError("glob")
+						}
+						if err := parseNameGlob(args[1]); err != nil {
+							return nil, createException(m, err.Error())
+						}
+					case mruby.TypeHash:
+						if hasSelectors {
+							return secondArgError("selector")
+						}
+						if err := parseSelectors(args[1]); err != nil {
+							return nil, createException(m, err.Error())
+						}
+					case mruby.TypeArray:
+						return nil, createException(m, "Only single array argument is allowed")
+					}
+				}
+
+				if len(args) >= 3 {
+					return nil, createException(m, "Maximum 2 arguments allowed")
+				}
+
+				vars.pods, err = rk.clientset.Core().Pods(rk.GetNamespace(ns)).List(listOptions)
 				if err != nil {
 					return nil, createException(m, err.Error())
 				}
@@ -103,7 +182,7 @@ func definePodsClass(rk *RubyKube, p *podsClass) *mruby.Class {
 				}
 				n := args[0]
 				if n.Type() != mruby.TypeFixnum {
-					return nil, createException(m, "Argument must be a integer")
+					return nil, createException(m, "Argument must be an integer")
 				}
 
 				l := len(vars.pods.Items)
