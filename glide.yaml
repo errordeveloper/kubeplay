@@ -8,6 +8,8 @@ import:
   - builder/signal
   - log
 - package: github.com/mitchellh/go-mruby
+  repo: https://github.com/erikh/go-mruby
+  version: 8143ff4e567d6219ae8f30d539cc5711f018c36b
 - package: k8s.io/client-go
   version: ^2.0.0-alpha.1
   subpackages:
