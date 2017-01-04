@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	_ "errors"
 	"fmt"
+	"regexp"
 	"runtime/debug"
 	"strings"
 
@@ -251,4 +252,13 @@ func standardCheck(rk *RubyKube, args []*mruby.MrbValue, l int) error {
 	}
 
 	return nil
+}
+
+func getNamedMatch(re *regexp.Regexp, matchString string, submatchName string, target *string) {
+	submatches := re.FindStringSubmatch(matchString)
+	for i, name := range re.SubexpNames() {
+		if name == submatchName {
+			*target = submatches[i]
+		}
+	}
 }

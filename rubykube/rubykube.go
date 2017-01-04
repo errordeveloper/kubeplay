@@ -144,11 +144,16 @@ func (rk *RubyKube) SetNamespace(ns string) {
 	rk.readline.SetPrompt(fmt.Sprintf("kubeplay (namespace=%q)> ", rk.state.Namespace))
 }
 
-func (rk *RubyKube) GetNamespace() string {
-	if rk.state.Namespace == "*" {
+func (rk *RubyKube) GetNamespace(override string) string {
+	ns := rk.state.Namespace
+	if override != "" {
+		ns = override
+	}
+
+	if ns == "*" {
 		return ""
 	}
-	return rk.state.Namespace
+	return ns
 }
 
 // Close tears down all functions of the RubyKube, preparing it for exit.

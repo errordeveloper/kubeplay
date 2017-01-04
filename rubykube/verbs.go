@@ -52,7 +52,12 @@ func pods(rk *RubyKube, args []*mruby.MrbValue, m *mruby.Mrb, self *mruby.MrbVal
 		return nil, createException(m, err.Error())
 	}
 
-	if value, err = newPodsObj.Update(); err != nil {
+	argv := []mruby.Value{}
+	for _, arg := range args {
+		argv = append(argv, mruby.Value(arg))
+	}
+
+	if value, err = newPodsObj.Update(argv...); err != nil {
 		return nil, createException(m, err.Error())
 	}
 	return value, nil
