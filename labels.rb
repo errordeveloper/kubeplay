@@ -116,7 +116,7 @@ puts LabelSelector.new { @foxes=not_in(as_hash({:boobmox => :mine})); @foo=as_ha
 
 puts "5. test"
 
-class Label
+class LabelName
   def initialize label_key
     @label_key = label_key
   end
@@ -149,24 +149,24 @@ end
 
 class String
   def to_l
-    Label.new self
+    LabelName.new self
   end
 end
 
 def label l
-  Label.new l
+  LabelName.new l
 end
 
-l = Label.new("foo")
+l = LabelName.new("foo")
 l =~ %w(foo foo.com example.foo.com)
 l !~ %w(foo foo.com example.foo.com)
 
 "xxx".to_l =~ %w(what.why.io)
 "xxx".to_l !~ %w(what.why.io)
 
-label "xxx" !~ %w(what.why.io)
+label("xxx") !~ %w(what.why.io)
 
-[:@app, :@name].each { |v| instance_variable_set(v, Label.new(v.to_s.split('@')[1])) }
+[:@app, :@name].each { |v| instance_variable_set(v, LabelName.new(v.to_s.split('@')[1])) }
 
 @app !~ %w(foo)
 @name =~ %w(bar)

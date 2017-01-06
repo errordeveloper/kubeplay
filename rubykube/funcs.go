@@ -23,7 +23,7 @@ type funcFunc func(rk *RubyKube, m *mruby.Mrb, self *mruby.MrbValue) (mruby.Valu
 
 // mrubyJumpTable is the dispatch instructions sent to the mruby interpreter at rk setup.
 var funcJumpTable = map[string]funcDefinition{
-	"load":   {loadFunc, mruby.ArgsReq(1)},
+	"import": {loadFunc, mruby.ArgsReq(1)},
 	"getenv": {getenv, mruby.ArgsReq(1)},
 }
 

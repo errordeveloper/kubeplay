@@ -12,16 +12,23 @@ var patches = []string{
 	// let user update a value of some filed and apply it, e.g.
 	// `my = rc.any; my.rc.spec.template.containers << myHandyDebuggerSideCar; myrc.apply!`
 	`class Hash
-	   def method_missing(m, *opts)
-	     if self.has_key?(m.to_s)
-	       return self[m.to_s]
-             elsif self.has_key?(m.to_sym)
-	       return self[m.to_sym]
-             end
-             return nil
-           end
-         end
-        `,
+	  def method_missing(m, *opts)
+	    if self.has_key?(m.to_s)
+	      return self[m.to_s]
+	    elsif self.has_key?(m.to_sym)
+	      return self[m.to_sym]
+	    end
+	    return nil
+	  end
+	 end
+	`,
+	// This is needed for creating lable expressions
+	`class String
+	   def to_l
+	     RubyKube::LabelName.new self
+	   end
+	 end
+	`,
 }
 
 func (rk *RubyKube) applyPatches() error {

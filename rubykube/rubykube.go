@@ -29,6 +29,7 @@ type Classes struct {
 	Pods     *podsClass
 	Pod      *podClass
 	PodMaker *podMaker
+	//LabelName *labelName
 }
 
 type CurrentState struct {
@@ -87,6 +88,7 @@ func NewRubyKube(omitFuncs []string, rl *readline.Instance) (*RubyKube, error) {
 	rk.classes.Pods = newPodsClass(rk)
 	rk.classes.Pod = newPodClass(rk)
 	rk.classes.PodMaker = newPodMakerClass(rk)
+	//rk.classes.LabelName = newLabelNameClass(rk)
 
 	rk.SetNamespace("*")
 	if err := rk.applyPatches(); err != nil {
