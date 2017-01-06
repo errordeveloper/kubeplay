@@ -39,7 +39,10 @@ class LabelSelector
     end
 
     def as_hash arg
-      self.instance_eval { @___ = LabelSelector::Hash.new arg }
+      self.instance_eval do
+        @___ = [] if @___.nil?
+        @___ = [@___, LabelSelector::Hash.new(arg)].flatten
+      end
     end
 
     def method_missing m, *args
@@ -74,18 +77,24 @@ class LabelSelector
       x = @hash.map do |k,v|
         LabelSelector.to_set_expr k, v
       end
-      x + @___.to_s unless @___.nil?
-      return x.reject(&:nil?).join(',')
+      (x + [@___].flatten).reject(&:nil?).join(',')
     end
   end
 end
 
+puts "1. instance variables and method_missing"
 puts LabelSelector.new { @bar = :absent; @foo = :present; @baz = :avalue; box 2; bax(not_in(3, 4)); }
 
+puts "2. using special ___ key to pass anything"
 puts LabelSelector.new bar: :present, baz: :present, foo: "bar", ___: "food in (boxes),this!=mine"
 
 puts "3. with as_hash"
 puts LabelSelector.new { as_hash(bar: :present, baz: :present, foo: "bar", bazzz: not_in("abc")) }
 
-puts "4. using mostly method_missing"
-puts LabelSelector.new { box 2; bax(not_in(3, 4)); foo; box; boxes; @foxes=not_in("boobmox"); }
+puts "4. method_missing, a variable and ___"
+puts LabelSelector.new { box 2; bax(not_in(3, 4)); foo; box; boxes; @foxes=not_in("boobmox"); @___="boombox!=mine"; }
+puts LabelSelector.new { box 2; bax(not_in(3, 4)); foo; box; boxes; @foxes=not_in("boobmox"); as_hash(xxx: 123, ___: 456)}
+puts LabelSelector.new { box 2; bax(not_in(3, 4)); foo; box; boxes; @foxes=not_in("boobmox"); @___="boombox!=mine"; as_hash(xxx: 123, ___: 456)}
+
+puts "5. a bad example - don't do this"
+puts LabelSelector.new { @foxes=not_in(as_hash({:boobmox => :mine})); @foo=as_hash(xxx: 123, ___: 456)}
