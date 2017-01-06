@@ -23,15 +23,15 @@ type funcFunc func(rk *RubyKube, m *mruby.Mrb, self *mruby.MrbValue) (mruby.Valu
 
 // mrubyJumpTable is the dispatch instructions sent to the mruby interpreter at rk setup.
 var funcJumpTable = map[string]funcDefinition{
-	"import": {importFunc, mruby.ArgsReq(1)},
+	"load":   {loadFunc, mruby.ArgsReq(1)},
 	"getenv": {getenv, mruby.ArgsReq(1)},
 }
 
-// importFunc implements the import function.
+// loadFunc implements the load function.
 //
-// import loads a new ruby file at the point of the function call. it is
+// load loads a new ruby file at the point of the function call. it is
 // principally used to extend and consolidate reusable code.
-func importFunc(rk *RubyKube, m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
+func loadFunc(rk *RubyKube, m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
 	args := m.GetArgs()
 	if err := checkArgs(args, 1); err != nil {
 		return nil, createException(m, err.Error())
