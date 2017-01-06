@@ -98,3 +98,79 @@ puts LabelSelector.new { box 2; bax(not_in(3, 4)); foo; box; boxes; @foxes=not_i
 
 puts "5. a bad example - don't do this"
 puts LabelSelector.new { @foxes=not_in(as_hash({:boobmox => :mine})); @foo=as_hash(xxx: 123, ___: 456)}
+
+## ALTERNATIVES
+
+#pods where_lable: "foo", yields_values_in: ["bar"]
+#pods where_label: "boombox", yields_values_not_in: ["mine"]
+#pods [{where: "boombox", values_not_in: ["mine"]}, {where: "name"}]
+#
+#pods labeled: "name"
+#pods labeled: "name", with_values_in: ["test"]
+#pods labeled: "name", with_values_not_in: ["test"]
+#
+#pods "foo ~= (bar baz)"
+#pods "foo ~= !(bar baz)"
+#pods "foo".matches_in(["boox", "boom"])
+#pods "foo".matches_not_in(["boox", "boom"])
+
+puts "5. test"
+
+class Label
+  def initialize label_key
+    @label_key = label_key
+  end
+
+  def match op, m
+    "#{@label_key} #{op.to_s} (#{m})"
+  end
+
+  def join m
+    ## TODO: validate
+    m.map { |m| m }.join(', ')
+  end
+
+  def =~ match_set
+    puts match(:in, join(match_set)) if match_set.is_a? Array
+    puts match(:in, join([match_set])) if match_set.is_a? String
+    puts match(:in, join([match_set.to_s])) if match_set.is_a? Symbol
+    puts match(:in, join([match_set.to_s])) if match_set.is_a? Fixnum
+    puts match(:in, join([match_set.to_s])) if match_set.is_a? Float
+  end
+
+  def !~ match_set
+    puts match(:notin, join(match_set)) if match_set.is_a? Array
+    puts match(:notin, join([match_set])) if match_set.is_a? String
+    puts match(:notin, join([match_set.to_s])) if match_set.is_a? Symbol
+    puts match(:notin, join([match_set.to_s])) if match_set.is_a? Fixnum
+    puts match(:notin, join([match_set.to_s])) if match_set.is_a? Float
+  end
+end
+
+class String
+  def to_l
+    Label.new self
+  end
+end
+
+def label l
+  Label.new l
+end
+
+l = Label.new("foo")
+l =~ %w(foo foo.com example.foo.com)
+l !~ %w(foo foo.com example.foo.com)
+
+"xxx".to_l =~ %w(what.why.io)
+"xxx".to_l !~ %w(what.why.io)
+
+label "xxx" !~ %w(what.why.io)
+
+[:@app, :@name].each { |v| instance_variable_set(v, Label.new(v.to_s.split('@')[1])) }
+
+@app !~ %w(foo)
+@name =~ %w(bar)
+@name =~ "bar"
+@name =~ 120
+@app =~ [120, :foo]
+## any undefined intance vars will be ignored 
