@@ -37,7 +37,6 @@ func definePodsClass(rk *RubyKube, p *podsClass) *mruby.Class {
 			mruby.ArgsReq(0) | mruby.ArgsOpt(2), func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
 				vars, err := p.LookupVars(self)
 				if err != nil {
-					fmt.Println(err)
 					return nil, createException(m, err.Error())
 				}
 

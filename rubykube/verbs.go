@@ -19,10 +19,11 @@ type verbDefinition struct {
 
 // verbJumpTable is the dispatch instructions sent to the builder at preparation time.
 var verbJumpTable = map[string]verbDefinition{
-	"new":       {newMaker, mruby.ArgsReq(1)},
-	"pods":      {pods, mruby.ArgsReq(0)},
-	"using":     {using, mruby.ArgsReq(0) | mruby.ArgsOpt(2)},
-	"namespace": {namespace, mruby.ArgsReq(0) | mruby.ArgsOpt(2)},
+	"new":         {newMaker, mruby.ArgsReq(1)},
+	"pods":        {pods, mruby.ArgsReq(0)},
+	"with_labels": {withLabels, mruby.ArgsReq(1)},
+	"using":       {using, mruby.ArgsReq(0) | mruby.ArgsOpt(2)},
+	"namespace":   {namespace, mruby.ArgsReq(0) | mruby.ArgsOpt(2)},
 }
 
 type verbFunc func(rk *RubyKube, args []*mruby.MrbValue, m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value)
@@ -61,6 +62,24 @@ func pods(rk *RubyKube, args []*mruby.MrbValue, m *mruby.Mrb, self *mruby.MrbVal
 		return nil, createException(m, err.Error())
 	}
 	return value, nil
+}
+
+func withLabels(rk *RubyKube, args []*mruby.MrbValue, m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
+	if err := checkArgs(args, 1); err != nil {
+		return nil, createException(m, err.Error())
+	}
+
+	argv := []mruby.Value{}
+	for _, arg := range args {
+		argv = append(argv, mruby.Value(arg))
+	}
+
+	newLabelNameObj, err := rk.classes.LabelSelector.New(argv...)
+	if err != nil {
+		return nil, createException(m, err.Error())
+	}
+
+	return newLabelNameObj.self, nil
 }
 
 func using(rk *RubyKube, args []*mruby.MrbValue, m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {

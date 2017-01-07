@@ -8,7 +8,7 @@ import (
 	kapi "k8s.io/client-go/pkg/api/v1"
 )
 
-type podMaker struct {
+type podMakerClass struct {
 	class   *mruby.Class
 	objects []podMakerInstance
 }
@@ -22,13 +22,13 @@ type podMakerInstanceVars struct {
 	pod *mruby.MrbValue
 }
 
-func newPodMakerClass(rk *RubyKube) *podMaker {
-	c := &podMaker{objects: []podMakerInstance{}}
+func newPodMakerClass(rk *RubyKube) *podMakerClass {
+	c := &podMakerClass{objects: []podMakerInstance{}}
 	c.class = definePodMakerClass(rk, c)
 	return c
 }
 
-func definePodMakerClass(rk *RubyKube, p *podMaker) *mruby.Class {
+func definePodMakerClass(rk *RubyKube, p *podMakerClass) *mruby.Class {
 	return defineClass(rk, "PodMaker", map[string]methodDefintion{
 		"pod!": {
 			mruby.ArgsReq(1), func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
@@ -139,7 +139,7 @@ func definePodMakerClass(rk *RubyKube, p *podMaker) *mruby.Class {
 	})
 }
 
-func (c *podMaker) New() (*podMakerInstance, error) {
+func (c *podMakerClass) New() (*podMakerInstance, error) {
 	s, err := c.class.New()
 	if err != nil {
 		return nil, err
@@ -152,7 +152,7 @@ func (c *podMaker) New() (*podMakerInstance, error) {
 	return &o, nil
 }
 
-func (c *podMaker) LookupVars(this *mruby.MrbValue) (*podMakerInstanceVars, error) {
+func (c *podMakerClass) LookupVars(this *mruby.MrbValue) (*podMakerInstanceVars, error) {
 	for _, that := range c.objects {
 		if *this == *that.self {
 			return that.vars, nil

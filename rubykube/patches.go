@@ -25,7 +25,7 @@ var patches = []string{
 	// This is needed for creating lable expressions
 	`class String
 	   def to_l
-	     RubyKube::LabelName.new self
+	     RubyKube::LabelKey.new self
 	   end
 	 end
 	`,
