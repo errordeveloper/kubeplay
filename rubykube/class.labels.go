@@ -76,11 +76,12 @@ func defineLabelSelectorClass(rk *RubyKube, l *labelSelectorClass) *mruby.Class 
 					return nil, createException(m, err.Error())
 				}
 
+				labels := []string{}
 				for _, e := range vars.collector.vars.labels {
-					fmt.Println(e)
+					labels = append(labels, fmt.Sprintf("%s %s (%s)", e.key, e.operator, strings.Join(e.values, ", ")))
 				}
 
-				return nil, nil
+				return m.StringValue(strings.Join(labels, ",")), nil
 			},
 			instanceMethod,
 		},
@@ -232,7 +233,9 @@ func (l *labelKeyClass) makeMatchMethod(operator string) methodDefintion {
 func defineLabelKeyClass(rk *RubyKube, l *labelKeyClass) *mruby.Class {
 	return defineClass(rk, "LabelKey", map[string]methodDefintion{
 		"=~": l.makeMatchMethod("in"),
+		"==": l.makeMatchMethod("in"),
 		"!~": l.makeMatchMethod("noin"),
+		"!=": l.makeMatchMethod("noin"),
 	})
 }
 
@@ -284,7 +287,7 @@ func (c *labelKeyClass) appendSetExpression(values *[]string, args ...*mruby.Mrb
 			return fmt.Errorf("a hash is an invalid type for label value set expression")
 		default:
 			s := m.String()
-			if strings.TrimSpace(s) != "" {
+			if strings.TrimSpace(s) == "" {
 				return fmt.Errorf("found an invalid string %q", s)
 			}
 			*values = append(*values, s)
