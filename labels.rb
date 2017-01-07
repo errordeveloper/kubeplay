@@ -30,7 +30,7 @@ class LabelSelector
     def initialize labels, &block
       @__labels__ = labels
       [:@app, :@name].each do |v|
-        instance_variable_set(v, LabelSelector::Key.new(v.to_s.split('@')[1], labels))
+        self.instance_variable_set(v, LabelSelector::Key.new(v.to_s.split('@')[1], labels))
       end
       self.instance_eval(&block)
     end

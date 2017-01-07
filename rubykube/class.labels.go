@@ -78,7 +78,11 @@ func defineLabelSelectorClass(rk *RubyKube, l *labelSelectorClass) *mruby.Class 
 
 				labels := []string{}
 				for _, e := range vars.collector.vars.labels {
-					labels = append(labels, fmt.Sprintf("%s %s (%s)", e.key, e.operator, strings.Join(e.values, ", ")))
+					if e.operator != "" {
+						labels = append(labels, fmt.Sprintf("%s %s (%s)", e.key, e.operator, strings.Join(e.values, ", ")))
+					} else {
+						labels = append(labels, e.key)
+					}
 				}
 
 				return m.StringValue(strings.Join(labels, ",")), nil
@@ -185,6 +189,25 @@ func (c *labelCollectorClass) New(args ...mruby.Value) (*labelCollectorInstance,
 	}
 	c.objects = append(c.objects, o)
 
+	for _, v := range []string{"app", "name"} {
+		// could do this, but it won't work cause we need to set onMatch somehow...
+		// c.rk.mrb.LoadString(fmt.Sprintf("@%s = RubyKube::LabelKey.new(%s)", v, v))
+		variableName, keyName := c.rk.mrb.StringValue("@"+v), c.rk.mrb.StringValue(v)
+
+		l, err := c.rk.classes.LabelKey.New(keyName)
+		if err != nil {
+			return nil, err
+		}
+
+		l.vars.onMatch = func(e labelExpression) {
+			o.vars.labels = append(o.vars.labels, e)
+		}
+
+		if _, err := s.Call("instance_variable_set", variableName, l.self); err != nil {
+			return nil, err
+		}
+	}
+
 	if _, err := s.CallBlock("instance_eval", args[0]); err != nil {
 		return nil, err
 	}
@@ -209,7 +232,7 @@ func newLabelKeyClass(rk *RubyKube) *labelKeyClass {
 
 func (l *labelKeyClass) makeMatchMethod(operator string) methodDefintion {
 	return methodDefintion{
-		mruby.ArgsReq(1), func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
+		mruby.ArgsReq(0) | mruby.ArgsOpt(1), func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
 			vars, err := l.LookupVars(self)
 			if err != nil {
 				return nil, createException(m, err.Error())
@@ -232,10 +255,21 @@ func (l *labelKeyClass) makeMatchMethod(operator string) methodDefintion {
 
 func defineLabelKeyClass(rk *RubyKube, l *labelKeyClass) *mruby.Class {
 	return defineClass(rk, "LabelKey", map[string]methodDefintion{
-		"=~": l.makeMatchMethod("in"),
-		"==": l.makeMatchMethod("in"),
-		"!~": l.makeMatchMethod("noin"),
-		"!=": l.makeMatchMethod("noin"),
+		"=~":          l.makeMatchMethod("in"),
+		"==":          l.makeMatchMethod("in"),
+		"!~":          l.makeMatchMethod("notin"),
+		"!=":          l.makeMatchMethod("notin"),
+		"any?":        l.makeMatchMethod(""),
+		"is_set?":     l.makeMatchMethod(""),
+		"defined?":    l.makeMatchMethod(""),
+		"present?":    l.makeMatchMethod(""),
+		"anything?":   l.makeMatchMethod(""),
+		"is_present?": l.makeMatchMethod(""),
+		"method_missing": {
+			mruby.ArgsReq(1), func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
+				return nil, nil
+			},
+			instanceMethod},
 	})
 }
 

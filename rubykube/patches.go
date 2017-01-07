@@ -22,13 +22,13 @@ var patches = []string{
 	  end
 	 end
 	`,
-	// This is needed for creating lable expressions
-	`class String
-	   def to_l
-	     RubyKube::LabelKey.new self
-	   end
-	 end
-	`,
+	//// This is needed for creating lable expressions
+	//`class String
+	//   def to_l
+	//     RubyKube::LabelKey.new self
+	//   end
+	// end
+	//`,
 }
 
 func (rk *RubyKube) applyPatches() error {
