@@ -19,28 +19,14 @@ type verbDefinition struct {
 
 // verbJumpTable is the dispatch instructions sent to the builder at preparation time.
 var verbJumpTable = map[string]verbDefinition{
-	"new":         {newMaker, mruby.ArgsReq(1)},
-	"pods":        {pods, mruby.ArgsReq(0)},
-	"with_labels": {withLabels, mruby.ArgsReq(1)},
-	"using":       {using, mruby.ArgsReq(0) | mruby.ArgsOpt(2)},
-	"namespace":   {namespace, mruby.ArgsReq(0) | mruby.ArgsOpt(2)},
+	"pods":                {pods, mruby.ArgsReq(0)},
+	"make_pod":            {makePod, mruby.ArgsReq(1)},
+	"make_label_selector": {makeLabelSelector, mruby.ArgsReq(1)},
+	"using":               {using, mruby.ArgsReq(0) | mruby.ArgsOpt(2)},
+	"namespace":           {namespace, mruby.ArgsReq(0) | mruby.ArgsOpt(2)},
 }
 
 type verbFunc func(rk *RubyKube, args []*mruby.MrbValue, m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value)
-
-func newMaker(rk *RubyKube, args []*mruby.MrbValue, m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
-	var (
-		err error
-	)
-
-	newPodMakerObj, err := rk.classes.PodMaker.New()
-
-	if err != nil {
-		return nil, createException(m, err.Error())
-	}
-
-	return newPodMakerObj.self, nil
-}
 
 func pods(rk *RubyKube, args []*mruby.MrbValue, m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
 	var (
@@ -53,28 +39,37 @@ func pods(rk *RubyKube, args []*mruby.MrbValue, m *mruby.Mrb, self *mruby.MrbVal
 		return nil, createException(m, err.Error())
 	}
 
-	argv := []mruby.Value{}
-	for _, arg := range args {
-		argv = append(argv, mruby.Value(arg))
-	}
-
-	if value, err = newPodsObj.Update(argv...); err != nil {
+	if value, err = newPodsObj.Update(toValues(args)...); err != nil {
 		return nil, createException(m, err.Error())
 	}
 	return value, nil
 }
 
-func withLabels(rk *RubyKube, args []*mruby.MrbValue, m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
+func makePod(rk *RubyKube, args []*mruby.MrbValue, m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
+	var (
+		err error
+	)
+
+	newPodMakerObj, err := rk.classes.PodMaker.New()
+
+	if err != nil {
+		return nil, createException(m, err.Error())
+	}
+
+	value, err := newPodMakerObj.self.Call("pod!", toValues(args)...)
+	if err != nil {
+		return nil, createException(m, err.Error())
+	}
+
+	return value, nil
+}
+
+func makeLabelSelector(rk *RubyKube, args []*mruby.MrbValue, m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
 	if err := checkArgs(args, 1); err != nil {
 		return nil, createException(m, err.Error())
 	}
 
-	argv := []mruby.Value{}
-	for _, arg := range args {
-		argv = append(argv, mruby.Value(arg))
-	}
-
-	newLabelNameObj, err := rk.classes.LabelSelector.New(argv...)
+	newLabelNameObj, err := rk.classes.LabelSelector.New(toValues(args)...)
 	if err != nil {
 		return nil, createException(m, err.Error())
 	}

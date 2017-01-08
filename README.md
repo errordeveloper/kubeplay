@@ -4,10 +4,10 @@
 
 ```console
 > ./kubeplay -kubeconfig ~/.kube/config
-kubeplay> pods # list pods in the cluster
+kubeplay (namespace="*")> pods # list pods in the cluster
 <list-of-pods>
-kubeplay> @pod = _.any # pick a random pod from the list
-kubeplay> puts @pod.to_json # output the pod definition in JSON
+kubeplay (namespace="*")> @pod = _.any # pick a random pod from the list
+kubeplay (namespace="*")> puts @pod.to_json # output the pod definition in JSON
 {
   "metadata": {
     ...
@@ -24,20 +24,78 @@ kubeplay> puts @pod.to_json # output the pod definition in JSON
     ...
   }
 }
-kubeplay> puts @pod.to_ruby # output the same as a Ruby hash
+kubeplay> (namespace="*") puts @pod.to_ruby # output the same as a Ruby hash
 { ... }
-kubeplay> @pod.delete!
+kubeplay (namespace="*")> @pod.delete!
 kubeplay> ^D
 > 
 ```
+
+By default commands operate on all namespaces, hence `(namespace="*")` is shown in the prompt.
+You can switch current namespaces with `namespace` command, e.g.
+```console
+kubeplay (namespace="*")> namespace "kube-system"
+kubeplay (namespace="kube-system") namespace "kube-system"
+```
+To go back to all-namespaces mode, use `namespace "*"`.
+
+The `pods` verb may take up two arguments in any order, a glob expressions, e.g.
+```
+kubeplay (namespace="*")> pods "kube-system/"
+```
+where you can use `"*/"` to look at pods in all namespace.
+
+> NOTE: Resource name matching is not yet implemented, but the plan is to make `pods "foo/bar-*"` & `pods "*/bar-*"` work.
+
+Another arument it takes is a hash, where keys `:labels` and `:fields` are recognised.
+
+The `:labels` can be passed in as a string or as a block with special syntax described bellow.
+
+To match a label agains a set of values, use `label("name") =~ %w(foo bar)`, or `!~`.
+
+If you want to just get resources with a certain label to set anything, use `label("baz").defined?`
+
+This
+```ruby
+{
+  label("name") =~ %w(foo bar)
+  label("baz").defined?
+}
+```
+will compile a selector string `name in (foo, bar),myapp`.
+
+And this
+```ruby
+{
+  label("name") !~ %w(foo bar)
+  label("baz").defined?
+}
+```
+will compile a selector string `name noin (foo, bar),myapp`.
+
+Some well-known labels have shortuct, e.g.
+```ruby
+{
+  @app !~ %w(foo bar)
+  @version =~ %w(0.1 0.2)
+  @tier =~ %w(frontend backend)
+}
+```
+
+You can use `make_label_selector` verb to construct these expressions, or simply pass a lambda like this:
+```
+kubeplay (namespace="*")> pods labels: -> { @app !~ %w(foo bar); @version =~ %w(0.1 0.2); @tier =~ %w(frontend backend); }
+```
+
+Another allowed key for the hash argument of `pods` verb is `:fields`, which can be used to match resource fields.
+Currently this doesn't have special syntax and a string must be constructed.
 
 ## Usage: object generator with minimal input
 
 ```console
 > ./kubeplay -kubeconfig ~/.kube/config
-kubeplay> new.pod!(image: "errordeveloper/foo:latest").to_json
-+++ Execute: new 
-kubeplay> puts _
+kubeplay (namespace="*")> make_pod(image: "errordeveloper/foo:latest").to_json
+kubeplay (namespace="*")> puts _
 {
   "metadata": {
     "creationTimestamp": null,
@@ -56,7 +114,7 @@ kubeplay> puts _
   },
   "status": {}
 }
-kubeplay> ^D
+kubeplay (namespace="*")> ^D
 >
 ```
 

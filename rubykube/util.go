@@ -273,3 +273,11 @@ func getNamedMatch(re *regexp.Regexp, matchString string, submatchName string, t
 		}
 	}
 }
+
+func toValues(args []*mruby.MrbValue) []mruby.Value {
+	argv := []mruby.Value{}
+	for _, arg := range args {
+		argv = append(argv, mruby.Value(arg))
+	}
+	return argv
+}

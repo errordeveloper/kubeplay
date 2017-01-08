@@ -145,12 +145,7 @@ func defineLabelCollectorClass(rk *RubyKube, l *labelCollectorClass) *mruby.Clas
 					return nil, createException(m, err.Error())
 				}
 
-				argv := []mruby.Value{}
-				for _, arg := range m.GetArgs() {
-					argv = append(argv, mruby.Value(arg))
-				}
-
-				newLabelKeyObj, err := rk.classes.LabelKey.New(argv...)
+				newLabelKeyObj, err := rk.classes.LabelKey.New(toValues(args)...)
 				if err != nil {
 					return nil, createException(m, err.Error())
 				}
