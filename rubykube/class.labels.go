@@ -189,7 +189,19 @@ func (c *labelCollectorClass) New(args ...mruby.Value) (*labelCollectorInstance,
 	}
 	c.objects = append(c.objects, o)
 
-	for _, v := range []string{"app", "name"} {
+	for _, v := range []string{
+		"app",
+		"name",
+		"org",
+		"owner",
+		"project",
+		"revision",
+		"service",
+		"team",
+		"tier",
+		"v",
+		"version",
+	} {
 		// could do this, but it won't work cause we need to set onMatch somehow...
 		// c.rk.mrb.LoadString(fmt.Sprintf("@%s = RubyKube::LabelKey.new(%s)", v, v))
 		variableName, keyName := c.rk.mrb.StringValue("@"+v), c.rk.mrb.StringValue(v)
