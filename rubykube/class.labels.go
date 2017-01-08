@@ -256,7 +256,6 @@ func (l *labelKeyClass) makeMatchMethod(operator string) methodDefintion {
 				return nil, createException(m, err.Error())
 			}
 
-			fmt.Println(e)
 			vars.onMatch(e)
 
 			return nil, nil
@@ -269,8 +268,18 @@ func defineLabelKeyClass(rk *RubyKube, l *labelKeyClass) *mruby.Class {
 	return defineClass(rk, "LabelKey", map[string]methodDefintion{
 		"=~":          l.makeMatchMethod("in"),
 		"==":          l.makeMatchMethod("in"),
+		"in":          l.makeMatchMethod("in"),
+		"in?":         l.makeMatchMethod("in"),
+		"is_in":       l.makeMatchMethod("in"),
+		"is_in?":      l.makeMatchMethod("in"),
 		"!~":          l.makeMatchMethod("notin"),
 		"!=":          l.makeMatchMethod("notin"),
+		"notin":       l.makeMatchMethod("notin"),
+		"notin?":      l.makeMatchMethod("notin"),
+		"not_in":      l.makeMatchMethod("notin"),
+		"not_in?":     l.makeMatchMethod("notin"),
+		"is_not_in":   l.makeMatchMethod("notin"),
+		"is_not_in?":  l.makeMatchMethod("notin"),
 		"any?":        l.makeMatchMethod(""),
 		"is_set?":     l.makeMatchMethod(""),
 		"defined?":    l.makeMatchMethod(""),
