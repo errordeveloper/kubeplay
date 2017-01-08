@@ -90,11 +90,13 @@ func marshalToJSON(obj interface{}, m *mruby.Mrb) (mruby.Value, mruby.Value) {
 	return m.StringValue(string(data)), nil
 }
 
+type paramProcHandler func(*mruby.MrbValue) error
 type params struct {
-	allowed   []string
-	required  []string
-	skipKnown []string
-	valueType mruby.ValueType
+	allowed      []string
+	required     []string
+	skipKnown    []string
+	valueType    mruby.ValueType
+	procHandlers map[string]paramProcHandler
 }
 
 type paramsCollection struct {
@@ -146,15 +148,6 @@ func NewParamsCollection(hash *mruby.MrbValue, spec params) (*paramsCollection, 
 		}
 
 		switch spec.valueType {
-		case mruby.TypeString:
-			if value.Type() != spec.valueType {
-				return fmt.Errorf(invalidValueTypeError, k0, "a string")
-			}
-			v := ValidString(value)
-			if v == nil {
-				return fmt.Errorf("found invalid or empty string value for %q parameter", k0)
-			}
-			params[k0] = *v
 		case mruby.TypeHash:
 			out := map[string]string{}
 			if value.Type() != spec.valueType {
@@ -186,6 +179,24 @@ func NewParamsCollection(hash *mruby.MrbValue, spec params) (*paramsCollection, 
 				return fmt.Errorf(iterationError, "array", k0, err)
 			}
 			params[k0] = *out
+
+		default:
+			if value.Type() == mruby.TypeProc {
+				if fn, ok := spec.procHandlers[k0]; ok {
+					if err := fn(value); err != nil {
+						return err
+					}
+				} else {
+					return fmt.Errorf("parameter %q is a proc, but no handler found", k0)
+				}
+				return nil
+			}
+			// assume it may convert into a valid string, so it works for object that implement `to_s`
+			v := ValidString(value)
+			if v == nil {
+				return fmt.Errorf("found invalid or empty string value for %q parameter", k0)
+			}
+			params[k0] = *v
 		}
 
 		return nil

@@ -46,7 +46,6 @@ func definePodsClass(rk *RubyKube, p *podsClass) *mruby.Class {
 				)
 
 				args := m.GetArgs()
-				fmt.Printf("args=%+v\n", args)
 
 				validName := "[a-z0-9]([-a-z0-9]*[a-z0-9])?"
 
@@ -75,11 +74,23 @@ func definePodsClass(rk *RubyKube, p *podsClass) *mruby.Class {
 				}
 
 				parseSelectors := func(arg *mruby.MrbValue) error {
-					pc, err := NewParamsCollection(arg,
+					stringCollection, err := NewParamsCollection(arg,
 						params{
 							allowed:   []string{"labels", "fields"},
 							required:  []string{},
 							valueType: mruby.TypeString,
+							procHandlers: map[string]paramProcHandler{
+								"labels": func(block *mruby.MrbValue) error {
+									newLabelNameObj, err := rk.classes.LabelSelector.New(block)
+									if err != nil {
+										return err
+									}
+
+									listOptions.LabelSelector = newLabelNameObj.self.String()
+
+									return nil
+								},
+							},
 						},
 					)
 
@@ -87,7 +98,7 @@ func definePodsClass(rk *RubyKube, p *podsClass) *mruby.Class {
 						return err
 					}
 
-					p := pc.ToMapOfStrings()
+					p := stringCollection.ToMapOfStrings()
 
 					if v, ok := p["labels"]; ok {
 						listOptions.LabelSelector = v
