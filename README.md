@@ -88,7 +88,11 @@ kubeplay (namespace="*")> pods labels: -> { @app !~ %w(foo bar); @version =~ %w(
 ```
 
 Another allowed key for the hash argument of `pods` verb is `:fields`, which can be used to match resource fields.
-Currently this doesn't have special syntax and a string must be constructed.
+Currently this doesn't have special syntax and a string must be constructed, e.g.
+
+```
+kubeplay (namespace="*")> pods fields: "status.phase!=Running", labels: -> { @tier =~ "backend" }
+```
 
 ## Usage: object generator with minimal input
 
