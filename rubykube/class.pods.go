@@ -49,24 +49,27 @@ func definePodsClass(rk *RubyKube, p *podsClass) *mruby.Class {
 				args := m.GetArgs()
 
 				validName := "[a-z0-9]([-a-z0-9]*[a-z0-9])?"
+				namespacePrefix := fmt.Sprintf(`?P<namespace>%s|\*`, validName)
 
 				// pods "foo/"
 				// pods "*/"
-				podsWithinNamespace := regexp.MustCompile(
-					fmt.Sprintf(`^(?P<namespace>%s|\*)\/$`,
-						validName))
-
+				allPodsWithinNamespace := regexp.MustCompile(
+					fmt.Sprintf(`^(%s)\/(\*)?$`,
+						namespacePrefix))
 				// pods "*-bar"
 				podNameBeginsWith := regexp.MustCompile(
-					fmt.Sprintf(`^(?P<podName>%s(-)?)\*$`,
+					fmt.Sprintf(`^((%s)\/)?(?P<podName>%s(-)?)\*$`,
+						namespacePrefix,
 						validName))
 				// pods "bar-*"
 				podNameEndsWith := regexp.MustCompile(
-					fmt.Sprintf(`^\*(?P<podName>(-)?%s)$`,
+					fmt.Sprintf(`^((%s)\/)?\*(?P<podName>(-)?%s)$`,
+						namespacePrefix,
 						validName))
 				// pods "*-bar-*"
 				podNameContains := regexp.MustCompile(
-					fmt.Sprintf(`^\*(?P<podName>(-)?%s(-)?)\*$`,
+					fmt.Sprintf(`^((%s)\/)?\*(?P<podName>(-)?%s(-)?)\*$`,
+						namespacePrefix,
 						validName))
 
 				// pods "*/bar-*"
@@ -79,19 +82,24 @@ func definePodsClass(rk *RubyKube, p *podsClass) *mruby.Class {
 					s := arg.String()
 					var p string
 					switch {
-					case podsWithinNamespace.MatchString(s):
-						getNamedMatch(podsWithinNamespace, s, "namespace", &ns)
+					case allPodsWithinNamespace.MatchString(s):
+						getNamedMatch(allPodsWithinNamespace, s, "namespace", &ns)
 					case podNameBeginsWith.MatchString(s):
+						getNamedMatch(podNameBeginsWith, s, "namespace", &ns)
 						getNamedMatch(podNameBeginsWith, s, "podName", &p)
 						podNameRegexp = regexp.MustCompile(fmt.Sprintf("^(%s)-?(%s)$", p, validName))
 					case podNameEndsWith.MatchString(s):
+						getNamedMatch(podNameEndsWith, s, "namespace", &ns)
 						getNamedMatch(podNameEndsWith, s, "podName", &p)
 						podNameRegexp = regexp.MustCompile(fmt.Sprintf("^(%s)-?(%s)$", validName, p))
 					case podNameContains.MatchString(s):
+						getNamedMatch(podNameContains, s, "namespace", &ns)
 						getNamedMatch(podNameContains, s, "podName", &p)
 						podNameRegexp = regexp.MustCompile(fmt.Sprintf("^(%s)?-?(%s)-?(%s)?$", validName, p, validName))
 					default:
-						fmt.Printf("Invalid glob expression - try `pods \"<namespace>/\"`, `pods \"*/\"` or `pods \"*/foo-*\"`\n")
+						if s != "*" {
+							return fmt.Errorf("Invalid glob expression - try `pods \"<namespace>/\"`, `pods \"*/\"` or `pods \"*/foo-*\"`\n")
+						}
 					}
 
 					hasNameGlob = true
