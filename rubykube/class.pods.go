@@ -41,8 +41,9 @@ func definePodsClass(rk *RubyKube, p *podsClass) *mruby.Class {
 				}
 
 				var (
-					ns          string
-					listOptions kapi.ListOptions
+					ns            string
+					podNameRegexp *regexp.Regexp
+					listOptions   kapi.ListOptions
 				)
 
 				args := m.GetArgs()
@@ -51,22 +52,46 @@ func definePodsClass(rk *RubyKube, p *podsClass) *mruby.Class {
 
 				// pods "foo/"
 				// pods "*/"
-				podsWithinNamespace := regexp.MustCompile(fmt.Sprintf(`^(?P<namespace>%s|\*)\/$`, validName))
+				podsWithinNamespace := regexp.MustCompile(
+					fmt.Sprintf(`^(?P<namespace>%s|\*)\/$`,
+						validName))
 
-				// pods "foo/bar-*"
+				// pods "*-bar"
+				podNameBeginsWith := regexp.MustCompile(
+					fmt.Sprintf(`^(?P<podName>%s(-)?)\*$`,
+						validName))
 				// pods "bar-*"
+				podNameEndsWith := regexp.MustCompile(
+					fmt.Sprintf(`^\*(?P<podName>(-)?%s)$`,
+						validName))
+				// pods "*-bar-*"
+				podNameContains := regexp.MustCompile(
+					fmt.Sprintf(`^\*(?P<podName>(-)?%s(-)?)\*$`,
+						validName))
+
 				// pods "*/bar-*"
+				// pods "foo/bar-*"
 
 				hasNameGlob := false
 				hasSelectors := false
 
 				parseNameGlob := func(arg *mruby.MrbValue) error {
 					s := arg.String()
+					var p string
 					switch {
 					case podsWithinNamespace.MatchString(s):
 						getNamedMatch(podsWithinNamespace, s, "namespace", &ns)
+					case podNameBeginsWith.MatchString(s):
+						getNamedMatch(podNameBeginsWith, s, "podName", &p)
+						podNameRegexp = regexp.MustCompile(fmt.Sprintf("^(%s)-?(%s)$", p, validName))
+					case podNameEndsWith.MatchString(s):
+						getNamedMatch(podNameEndsWith, s, "podName", &p)
+						podNameRegexp = regexp.MustCompile(fmt.Sprintf("^(%s)-?(%s)$", validName, p))
+					case podNameContains.MatchString(s):
+						getNamedMatch(podNameContains, s, "podName", &p)
+						podNameRegexp = regexp.MustCompile(fmt.Sprintf("^(%s)?-?(%s)-?(%s)?$", validName, p, validName))
 					default:
-						fmt.Printf("Invalid glob expression - try `pods \"<namespace>/\"`, `pods \"*/\"` or `pods \"*/foo-*\"`")
+						fmt.Printf("Invalid glob expression - try `pods \"<namespace>/\"`, `pods \"*/\"` or `pods \"*/foo-*\"`\n")
 					}
 
 					hasNameGlob = true
@@ -156,9 +181,19 @@ func definePodsClass(rk *RubyKube, p *podsClass) *mruby.Class {
 					return nil, createException(m, "Maximum 2 arguments allowed")
 				}
 
-				vars.pods, err = rk.clientset.Core().Pods(rk.GetNamespace(ns)).List(listOptions)
+				pods, err := rk.clientset.Core().Pods(rk.GetNamespace(ns)).List(listOptions)
 				if err != nil {
 					return nil, createException(m, err.Error())
+				}
+
+				if podNameRegexp != nil {
+					for _, p := range pods.Items {
+						if podNameRegexp.MatchString(p.ObjectMeta.Name) {
+							vars.pods.Items = append(vars.pods.Items, p)
+						}
+					}
+				} else {
+					vars.pods = pods
 				}
 				return self, nil
 			},

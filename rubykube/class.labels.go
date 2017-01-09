@@ -145,7 +145,7 @@ func defineLabelCollectorClass(rk *RubyKube, l *labelCollectorClass) *mruby.Clas
 					return nil, createException(m, err.Error())
 				}
 
-				newLabelKeyObj, err := rk.classes.LabelKey.New(toValues(args)...)
+				newLabelKeyObj, err := rk.classes.LabelKey.New(toValues(m.GetArgs())...)
 				if err != nil {
 					return nil, createException(m, err.Error())
 				}
