@@ -40,12 +40,32 @@ kubeplay (namespace="kube-system")>
 To go back to all-namespaces mode, use `namespace "*"`.
 
 The `pods` verb may take up two arguments in any order, a glob expressions, e.g.
-```
+```console
 kubeplay (namespace="*")> pods "kube-system/"
 ```
 where you can use `"*/"` to look at pods in all namespace.
 
-> NOTE: Resource name matching is not yet implemented, but the plan is to make `pods "foo/bar-*"` & `pods "*/bar-*"` work.
+For example, you can get all pods in a namespace other then current like this:
+```console
+kubeplay (namespace="default")> pods "kube-system/"
+```
+Or, you can get pods in all namespace like this:
+```console
+kubeplay (namespace="default")> pods "*/"
+```
+
+To get all pods containing `foo` in current namespace:
+```console
+kubeplay (namespace="default")> pods "*foo*"
+```
+To get all pods begining with `bar-*` in all namespaces:
+
+```console
+kubeplay (namespace="default")> pods "*/bar-*"
+
+```
+
+> NOTE: `pods "*"` is the same as `pods`, and `pods "*/*"` is the same as `pods "*/"`.
 
 Another arument it takes is a hash, where keys `:labels` and `:fields` are recognised.
 
@@ -83,14 +103,13 @@ Some well-known labels have shortuct, e.g.
 ```
 
 You can use `make_label_selector` verb to construct these expressions, or simply pass a lambda like this:
-```
+```console
 kubeplay (namespace="*")> pods labels: -> { @app !~ %w(foo bar); @version =~ %w(0.1 0.2); @tier =~ %w(frontend backend); }
 ```
 
 Another allowed key for the hash argument of `pods` verb is `:fields`, which can be used to match resource fields.
 Currently this doesn't have special syntax and a string must be constructed, e.g.
-
-```
+```console
 kubeplay (namespace="*")> pods fields: "status.phase!=Running", labels: -> { @tier =~ "backend" }
 ```
 
