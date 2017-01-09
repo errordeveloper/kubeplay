@@ -35,7 +35,7 @@ By default commands operate on all namespaces, hence `(namespace="*")` is shown 
 You can switch current namespaces with `namespace` command, e.g.
 ```console
 kubeplay (namespace="*")> namespace "kube-system"
-kubeplay (namespace="kube-system") namespace "kube-system"
+kubeplay (namespace="kube-system")>
 ```
 To go back to all-namespaces mode, use `namespace "*"`.
 
