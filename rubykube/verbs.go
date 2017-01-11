@@ -24,6 +24,7 @@ var verbJumpTable = map[string]verbDefinition{
 	"make_label_selector": {makeLabelSelector, mruby.ArgsReq(1)},
 	"using":               {using, mruby.ArgsReq(0) | mruby.ArgsOpt(2)},
 	"namespace":           {namespace, mruby.ArgsReq(0) | mruby.ArgsOpt(2)},
+	"def_alias":           {defAlias, mruby.ArgsReq(2)},
 }
 
 type verbFunc func(rk *RubyKube, args []*mruby.MrbValue, m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value)
@@ -130,6 +131,28 @@ func namespace(rk *RubyKube, args []*mruby.MrbValue, m *mruby.Mrb, self *mruby.M
 	if len(args) == 2 {
 		//TODO: allow calling with a block
 	}
+
+	return nil, nil
+}
+
+func defAlias(rk *RubyKube, args []*mruby.MrbValue, m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
+	if len(args) != 2 {
+		return nil, createException(m, "Must provide exactly two arguments")
+	}
+
+	if args[0].Type() != mruby.TypeSymbol && args[1].Type() != mruby.TypeSymbol {
+		return nil, createException(m, "Both arguments must be symbols")
+	}
+
+	aliasFunc := func(m *mruby.Mrb, _ *mruby.MrbValue) (mruby.Value, mruby.Value) {
+		value, err := self.Call(args[1].String(), toValues(m.GetArgs())...)
+		if err != nil {
+			return nil, createException(m, err.Error())
+		}
+		return value, nil
+	}
+
+	rk.mrb.TopSelf().SingletonClass().DefineMethod(args[0].String(), aliasFunc, mruby.ArgsAny())
 
 	return nil, nil
 }
