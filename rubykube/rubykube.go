@@ -3,6 +3,7 @@ package rubykube
 import (
 	"flag"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/chzyer/readline"
@@ -14,7 +15,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-var kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
+var kubeconfig = flag.String("kubeconfig", os.ExpandEnv("${HOME}/.kube/config"), "absolute path to the kubeconfig file")
 
 type RubyKube struct {
 	mrb       *mruby.Mrb
