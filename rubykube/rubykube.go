@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/chzyer/readline"
@@ -12,6 +13,7 @@ import (
 	mruby "github.com/mitchellh/go-mruby"
 
 	"k8s.io/client-go/kubernetes"
+	kapi "k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
@@ -33,6 +35,7 @@ type Classes struct {
 	LabelSelector  *labelSelectorClass
 	LabelCollector *labelCollectorClass
 	LabelKey       *labelKeyClass
+	//ReplicaSets    *replicaSetsClass
 }
 
 type CurrentState struct {
@@ -94,6 +97,7 @@ func NewRubyKube(omitFuncs []string, rl *readline.Instance) (*RubyKube, error) {
 	rk.classes.LabelSelector = newLabelSelectorClass(rk)
 	rk.classes.LabelCollector = newLabelCollectorClass(rk)
 	rk.classes.LabelKey = newLabelKeyClass(rk)
+	//rk.classes.ReplicaSets = newReplicaSetsClass(rk)
 
 	rk.SetNamespace("*")
 	if err := rk.applyPatches(); err != nil {
@@ -168,20 +172,20 @@ func (rk *RubyKube) RunCode(block *mruby.MrbValue, stackKeep int) (*mruby.MrbVal
 
 }
 
-func (rk *RubyKube) SetNamespace(ns string) {
-	if ns == "" {
-		ns = "*"
-	}
-	rk.state.Namespace = ns
-	rk.readline.SetPrompt(fmt.Sprintf("kubeplay (namespace=%q)> ", rk.state.Namespace))
-}
-
 func (rk *RubyKube) NormalPrompt() {
 	rk.readline.SetPrompt(fmt.Sprintf("kubeplay (namespace=%q)> ", rk.state.Namespace))
 }
 
 func (rk *RubyKube) MultiLinePrompt() {
 	rk.readline.SetPrompt(fmt.Sprintf("kubeplay (namespace=%q)> ....| ", rk.state.Namespace))
+}
+
+func (rk *RubyKube) SetNamespace(ns string) {
+	if ns == "" {
+		ns = "*"
+	}
+	rk.state.Namespace = ns
+	rk.readline.SetPrompt(fmt.Sprintf("kubeplay (namespace=%q)> ", rk.state.Namespace))
 }
 
 func (rk *RubyKube) GetNamespace(override string) string {
@@ -194,6 +198,163 @@ func (rk *RubyKube) GetNamespace(override string) string {
 		return ""
 	}
 	return ns
+}
+
+func (rk *RubyKube) resourceArgs(args []*mruby.MrbValue) (string, *regexp.Regexp, *kapi.ListOptions, error) {
+	var (
+		ns          string
+		nameRegexp  *regexp.Regexp
+		listOptions kapi.ListOptions
+	)
+
+	validName := "[a-z0-9]([-a-z0-9]*[a-z0-9])?"
+	namespacePrefix := fmt.Sprintf(`?P<namespace>%s|\*`, validName)
+
+	// pods "foo/"
+	// pods "*/"
+	allWithinNamespace := regexp.MustCompile(
+		fmt.Sprintf(`^(%s)\/(\*)?$`,
+			namespacePrefix))
+	// pods "*-bar"
+	nameBeginsWith := regexp.MustCompile(
+		fmt.Sprintf(`^((%s)\/)?(?P<name>%s(-)?)\*$`,
+			namespacePrefix,
+			validName))
+	// pods "bar-*"
+	nameEndsWith := regexp.MustCompile(
+		fmt.Sprintf(`^((%s)\/)?\*(?P<name>(-)?%s)$`,
+			namespacePrefix,
+			validName))
+	// pods "*-bar-*"
+	nameContains := regexp.MustCompile(
+		fmt.Sprintf(`^((%s)\/)?\*(?P<name>(-)?%s(-)?)\*$`,
+			namespacePrefix,
+			validName))
+
+	// pods "*/bar-*"
+	// pods "foo/bar-*"
+
+	hasNameGlob := false
+	hasSelectors := false
+
+	parseNameGlob := func(arg *mruby.MrbValue) error {
+		s := arg.String()
+		var p string
+		switch {
+		case allWithinNamespace.MatchString(s):
+			getNamedMatch(allWithinNamespace, s, "namespace", &ns)
+		case nameBeginsWith.MatchString(s):
+			getNamedMatch(nameBeginsWith, s, "namespace", &ns)
+			getNamedMatch(nameBeginsWith, s, "name", &p)
+			nameRegexp = regexp.MustCompile(fmt.Sprintf("^(%s)-?(%s)$", p, validName))
+		case nameEndsWith.MatchString(s):
+			getNamedMatch(nameEndsWith, s, "namespace", &ns)
+			getNamedMatch(nameEndsWith, s, "name", &p)
+			nameRegexp = regexp.MustCompile(fmt.Sprintf("^(%s)-?(%s)$", validName, p))
+		case nameContains.MatchString(s):
+			getNamedMatch(nameContains, s, "namespace", &ns)
+			getNamedMatch(nameContains, s, "name", &p)
+			nameRegexp = regexp.MustCompile(fmt.Sprintf("^(%s)?-?(%s)-?(%s)?$", validName, p, validName))
+		default:
+			if s != "*" {
+				return fmt.Errorf("Invalid glob expression - try `pods \"<namespace>/\"`, `pods \"*/\"` or `pods \"*/foo-*\"`\n")
+			}
+		}
+
+		hasNameGlob = true
+		return nil
+	}
+
+	parseSelectors := func(arg *mruby.MrbValue) error {
+		stringCollection, err := NewParamsCollection(arg,
+			params{
+				allowed:   []string{"labels", "fields"},
+				required:  []string{},
+				valueType: mruby.TypeString,
+				procHandlers: map[string]paramProcHandler{
+					"labels": func(block *mruby.MrbValue) error {
+						newLabelNameObj, err := rk.classes.LabelSelector.New(block)
+						if err != nil {
+							return err
+						}
+
+						listOptions.LabelSelector = newLabelNameObj.self.String()
+
+						return nil
+					},
+				},
+			},
+		)
+
+		if err != nil {
+			return err
+		}
+
+		p := stringCollection.ToMapOfStrings()
+
+		if v, ok := p["labels"]; ok {
+			listOptions.LabelSelector = v
+		}
+		if v, ok := p["fields"]; ok {
+			listOptions.FieldSelector = v
+		}
+
+		hasSelectors = true
+		return nil
+	}
+
+	fail := func(err error) (string, *regexp.Regexp, *kapi.ListOptions, error) {
+		return "", nil, nil, err
+	}
+
+	secondArgError := func(kind string) error {
+		return fmt.Errorf("Found second " + kind + " argument, only single one is allowed - use array notation for mulptiple queries")
+	}
+
+	if len(args) >= 1 {
+		switch args[0].Type() {
+		case mruby.TypeString:
+			if err := parseNameGlob(args[0]); err != nil {
+				return fail(err)
+			}
+		case mruby.TypeHash:
+			if err := parseSelectors(args[0]); err != nil {
+				return fail(err)
+			}
+		case mruby.TypeArray:
+			// TODO: we could allow users to collect object matching multiple globs
+			return fail(fmt.Errorf("Not yet implemented!"))
+		}
+	}
+
+	if len(args) >= 2 {
+
+		switch args[1].Type() {
+		case mruby.TypeString:
+			if hasNameGlob {
+				return fail(secondArgError("glob"))
+
+			}
+			if err := parseNameGlob(args[1]); err != nil {
+				return fail(err)
+			}
+		case mruby.TypeHash:
+			if hasSelectors {
+				return fail(secondArgError("selector"))
+			}
+			if err := parseSelectors(args[1]); err != nil {
+				return fail(err)
+			}
+		case mruby.TypeArray:
+			return fail(fmt.Errorf("Only single array argument is allowed"))
+		}
+	}
+
+	if len(args) >= 3 {
+		return fail(fmt.Errorf("Maximum 2 arguments allowed"))
+	}
+
+	return ns, nameRegexp, &listOptions, nil
 }
 
 // Mrb returns the mrb (mruby) instance the builder is using.

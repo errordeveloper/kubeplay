@@ -3,7 +3,6 @@ package rubykube
 import (
 	"fmt"
 	"math/rand"
-	"regexp"
 
 	"github.com/errordeveloper/kubeplay/rubykube/converter"
 
@@ -40,156 +39,12 @@ func definePodsClass(rk *RubyKube, p *podsClass) *mruby.Class {
 					return nil, createException(m, err.Error())
 				}
 
-				var (
-					ns            string
-					podNameRegexp *regexp.Regexp
-					listOptions   kapi.ListOptions
-				)
-
-				args := m.GetArgs()
-
-				validName := "[a-z0-9]([-a-z0-9]*[a-z0-9])?"
-				namespacePrefix := fmt.Sprintf(`?P<namespace>%s|\*`, validName)
-
-				// pods "foo/"
-				// pods "*/"
-				allPodsWithinNamespace := regexp.MustCompile(
-					fmt.Sprintf(`^(%s)\/(\*)?$`,
-						namespacePrefix))
-				// pods "*-bar"
-				podNameBeginsWith := regexp.MustCompile(
-					fmt.Sprintf(`^((%s)\/)?(?P<podName>%s(-)?)\*$`,
-						namespacePrefix,
-						validName))
-				// pods "bar-*"
-				podNameEndsWith := regexp.MustCompile(
-					fmt.Sprintf(`^((%s)\/)?\*(?P<podName>(-)?%s)$`,
-						namespacePrefix,
-						validName))
-				// pods "*-bar-*"
-				podNameContains := regexp.MustCompile(
-					fmt.Sprintf(`^((%s)\/)?\*(?P<podName>(-)?%s(-)?)\*$`,
-						namespacePrefix,
-						validName))
-
-				// pods "*/bar-*"
-				// pods "foo/bar-*"
-
-				hasNameGlob := false
-				hasSelectors := false
-
-				parseNameGlob := func(arg *mruby.MrbValue) error {
-					s := arg.String()
-					var p string
-					switch {
-					case allPodsWithinNamespace.MatchString(s):
-						getNamedMatch(allPodsWithinNamespace, s, "namespace", &ns)
-					case podNameBeginsWith.MatchString(s):
-						getNamedMatch(podNameBeginsWith, s, "namespace", &ns)
-						getNamedMatch(podNameBeginsWith, s, "podName", &p)
-						podNameRegexp = regexp.MustCompile(fmt.Sprintf("^(%s)-?(%s)$", p, validName))
-					case podNameEndsWith.MatchString(s):
-						getNamedMatch(podNameEndsWith, s, "namespace", &ns)
-						getNamedMatch(podNameEndsWith, s, "podName", &p)
-						podNameRegexp = regexp.MustCompile(fmt.Sprintf("^(%s)-?(%s)$", validName, p))
-					case podNameContains.MatchString(s):
-						getNamedMatch(podNameContains, s, "namespace", &ns)
-						getNamedMatch(podNameContains, s, "podName", &p)
-						podNameRegexp = regexp.MustCompile(fmt.Sprintf("^(%s)?-?(%s)-?(%s)?$", validName, p, validName))
-					default:
-						if s != "*" {
-							return fmt.Errorf("Invalid glob expression - try `pods \"<namespace>/\"`, `pods \"*/\"` or `pods \"*/foo-*\"`\n")
-						}
-					}
-
-					hasNameGlob = true
-					return nil
+				ns, podNameRegexp, listOptions, err := rk.resourceArgs(m.GetArgs())
+				if err != nil {
+					return nil, createException(m, err.Error())
 				}
 
-				parseSelectors := func(arg *mruby.MrbValue) error {
-					stringCollection, err := NewParamsCollection(arg,
-						params{
-							allowed:   []string{"labels", "fields"},
-							required:  []string{},
-							valueType: mruby.TypeString,
-							procHandlers: map[string]paramProcHandler{
-								"labels": func(block *mruby.MrbValue) error {
-									newLabelNameObj, err := rk.classes.LabelSelector.New(block)
-									if err != nil {
-										return err
-									}
-
-									listOptions.LabelSelector = newLabelNameObj.self.String()
-
-									return nil
-								},
-							},
-						},
-					)
-
-					if err != nil {
-						return err
-					}
-
-					p := stringCollection.ToMapOfStrings()
-
-					if v, ok := p["labels"]; ok {
-						listOptions.LabelSelector = v
-					}
-					if v, ok := p["fields"]; ok {
-						listOptions.FieldSelector = v
-					}
-
-					hasSelectors = true
-					return nil
-				}
-
-				if len(args) >= 1 {
-					switch args[0].Type() {
-					case mruby.TypeString:
-						if err := parseNameGlob(args[0]); err != nil {
-							return nil, createException(m, err.Error())
-						}
-					case mruby.TypeHash:
-						if err := parseSelectors(args[0]); err != nil {
-							return nil, createException(m, err.Error())
-						}
-					case mruby.TypeArray:
-						// TODO: we could allow users to collect object matching multiple globs
-						return nil, createException(m, "Not yet implemented!")
-					}
-				}
-
-				if len(args) >= 2 {
-					secondArgError := func(kind string) (mruby.Value, mruby.Value) {
-						return nil, createException(m, "Found second "+kind+" argument, only single one is allowed - use array notation for mulptiple queries")
-					}
-
-					switch args[1].Type() {
-					case mruby.TypeString:
-						if hasNameGlob {
-							return secondArgError("glob")
-						}
-						if err := parseNameGlob(args[1]); err != nil {
-							return nil, createException(m, err.Error())
-						}
-					case mruby.TypeHash:
-						if hasSelectors {
-							return secondArgError("selector")
-						}
-						if err := parseSelectors(args[1]); err != nil {
-							return nil, createException(m, err.Error())
-						}
-					case mruby.TypeArray:
-						return nil, createException(m, "Only single array argument is allowed")
-					}
-				}
-
-				if len(args) >= 3 {
-					return nil, createException(m, "Maximum 2 arguments allowed")
-				}
-
-				pods, err := rk.clientset.Core().Pods(rk.GetNamespace(ns)).List(listOptions)
+				pods, err := rk.clientset.Core().Pods(rk.GetNamespace(ns)).List(*listOptions)
 				if err != nil {
 					return nil, createException(m, err.Error())
 				}
