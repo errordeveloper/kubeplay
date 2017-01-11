@@ -3,7 +3,7 @@
 ## Usage: easy REPL with Ruby syntax
 
 ```console
-> ./kubeplay -kubeconfig ~/.kube/config
+> ./kubeplay
 kubeplay (namespace="*")> pods # list pods in the cluster
 <list-of-pods>
 kubeplay (namespace="*")> @pod = _.any # pick a random pod from the list
