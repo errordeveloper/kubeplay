@@ -8,10 +8,11 @@ import (
 
 	"github.com/chzyer/readline"
 	"github.com/errordeveloper/kubeplay/rubykube"
+	mruby "github.com/mitchellh/go-mruby"
 )
 
 // Repl encapsulates a series of items used to create a read-evaluate-print
-// loop so that end users can manually enter build instructions.
+// loop so that end users can play with quebes & pods.
 type Repl struct {
 	rubykube *rubykube.RubyKube
 	readline *readline.Instance
@@ -42,6 +43,13 @@ func (r *Repl) Loop() error {
 	}()
 
 	var line string
+	var stackKeep int
+	//var val *mruby.MrbValue
+
+	parser := mruby.NewParser(r.rubykube.Mrb())
+	context := mruby.NewCompileContext(r.rubykube.Mrb())
+	context.CaptureErrors(true)
+
 	for {
 		tmp, err := r.readline.Readline()
 		if err == io.EOF {
@@ -49,7 +57,12 @@ func (r *Repl) Loop() error {
 		}
 
 		if err != nil && err.Error() == "Interrupt" {
-			fmt.Println("You can press ^D or type \"quit\", \"exit\" to exit the shell")
+			if line != "" {
+				r.rubykube.NormalPrompt()
+			} else {
+				fmt.Println("You can press ^D or type \"quit\", \"exit\" to exit the shell")
+			}
+
 			line = ""
 			continue
 		}
@@ -59,20 +72,32 @@ func (r *Repl) Loop() error {
 			os.Exit(1)
 		}
 
-		line += tmp
+		line += tmp + "\n"
 
 		switch strings.TrimSpace(line) {
 		case "quit":
 			fallthrough
 		case "exit":
 			os.Exit(0)
+		case "help":
+			fmt.Println("Please take a look at usage examples\n\t\thttps://github.com/errordeveloper/kubeplay/blob/master/README.md")
 		}
 
-		_, err = r.rubykube.Run(line)
+		if _, err := parser.Parse(line, context); err != nil {
+			r.rubykube.MultiLinePrompt()
+			continue
+		}
+
+		_, stackKeep, err = r.rubykube.RunCode(parser.GenerateCode(), stackKeep)
 		line = ""
+		r.rubykube.NormalPrompt()
 		if err != nil {
 			fmt.Printf("+++ Error: %v\n", err)
 			continue
 		}
+
+		//if val.String() != "" {
+		//	fmt.Println(val)
+		//}
 	}
 }

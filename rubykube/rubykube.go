@@ -143,12 +143,45 @@ func (rk *RubyKube) Run(script string) (*mruby.MrbValue, error) {
 	return value, nil
 }
 
+// RunCode runs the ruby value (a proc) and returns the result.
+func (rk *RubyKube) RunCode(block *mruby.MrbValue, stackKeep int) (*mruby.MrbValue, int, error) {
+	var value *mruby.MrbValue
+
+	keep, value, err := rk.mrb.RunWithContext(block, rk.mrb.TopSelf(), stackKeep)
+	if err != nil {
+		return nil, keep, err
+	}
+
+	if _, err := value.Call("inspect"); err != nil {
+		return value, keep, fmt.Errorf("could not call `#inspect` [%q]", err)
+	}
+
+	getLastValue := func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) { return value, nil }
+
+	if value.Type() != mruby.TypeNil {
+		rk.mrb.TopSelf().SingletonClass().DefineMethod("_", getLastValue, mruby.ArgsReq(0))
+	}
+
+	rk.mrb.TopSelf().SingletonClass().DefineMethod("$?", getLastValue, mruby.ArgsReq(0))
+
+	return value, keep, nil
+
+}
+
 func (rk *RubyKube) SetNamespace(ns string) {
 	if ns == "" {
 		ns = "*"
 	}
 	rk.state.Namespace = ns
 	rk.readline.SetPrompt(fmt.Sprintf("kubeplay (namespace=%q)> ", rk.state.Namespace))
+}
+
+func (rk *RubyKube) NormalPrompt() {
+	rk.readline.SetPrompt(fmt.Sprintf("kubeplay (namespace=%q)> ", rk.state.Namespace))
+}
+
+func (rk *RubyKube) MultiLinePrompt() {
+	rk.readline.SetPrompt(fmt.Sprintf("kubeplay (namespace=%q)> ....| ", rk.state.Namespace))
 }
 
 func (rk *RubyKube) GetNamespace(override string) string {
@@ -161,6 +194,11 @@ func (rk *RubyKube) GetNamespace(override string) string {
 		return ""
 	}
 	return ns
+}
+
+// Mrb returns the mrb (mruby) instance the builder is using.
+func (rk *RubyKube) Mrb() *mruby.Mrb {
+	return rk.mrb
 }
 
 // Close tears down all functions of the RubyKube, preparing it for exit.
