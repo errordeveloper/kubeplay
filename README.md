@@ -33,7 +33,15 @@ kubeplay> ^D
 
 All resources can be converted to a Ruby-native reprsentation, which means you can do things like this:
 ```ruby
-replicasets("*/").to_ruby.items.each { |k,v| m = v.metadata ; puts "#{m.name}\n\t#{m.labels}" }
+metadata = replicasets("*/").to_ruby.items.map do |k,v|
+   v.metadata
+end
+
+metadata.each do |i|
+    puts "Name:\t#{i.name}"
+    puts "Labels:\t#{i.labels}"
+    puts
+end
 ```
 
 By default commands operate on all namespaces, hence `(namespace="*")` is shown in the prompt.
