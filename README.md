@@ -31,6 +31,11 @@ kubeplay> ^D
 > 
 ```
 
+All resources can be converted to a Ruby-native reprsentation, which means you can do things like this:
+```ruby
+replicasets("*/").to_ruby.items.each { |k,v| m = v.metadata ; puts "#{m.name}\n\t#{m.labels}" }
+```
+
 By default commands operate on all namespaces, hence `(namespace="*")` is shown in the prompt.
 You can switch current namespaces with `namespace` command, e.g.
 ```console
@@ -109,8 +114,8 @@ kubeplay (namespace="*")> pods labels: -> { @app !~ %w(foo bar); @version =~ %w(
 
 Another allowed key for the hash argument of `pods` verb is `:fields`, which can be used to match resource fields.
 Currently this doesn't have special syntax and a string must be constructed, e.g.
-```console
-kubeplay (namespace="*")> pods fields: "status.phase!=Running", labels: -> { @tier =~ "backend" }
+```ruby
+pods fields: "status.phase!=Running", labels: -> { @tier =~ "backend" }
 ```
 
 ## Usage: object generator with minimal input

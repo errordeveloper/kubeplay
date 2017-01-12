@@ -19,7 +19,8 @@ type verbDefinition struct {
 
 // verbJumpTable is the dispatch instructions sent to the builder at preparation time.
 var verbJumpTable = map[string]verbDefinition{
-	"pods":                {pods, mruby.ArgsReq(0)},
+	"pods":                {pods, mruby.ArgsReq(0) | mruby.ArgsOpt(2)},
+	"replicasets":         {replicaSets, mruby.ArgsReq(0) | mruby.ArgsOpt(2)},
 	"make_pod":            {makePod, mruby.ArgsReq(1)},
 	"make_label_selector": {makeLabelSelector, mruby.ArgsReq(1)},
 	"using":               {using, mruby.ArgsReq(0) | mruby.ArgsOpt(2)},
@@ -41,6 +42,23 @@ func pods(rk *RubyKube, args []*mruby.MrbValue, m *mruby.Mrb, self *mruby.MrbVal
 	}
 
 	if value, err = newPodsObj.Update(args...); err != nil {
+		return nil, createException(m, err.Error())
+	}
+	return value, nil
+}
+
+func replicaSets(rk *RubyKube, args []*mruby.MrbValue, m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
+	var (
+		value mruby.Value
+		err   error
+	)
+
+	newReplicaSetsObj, err := rk.classes.ReplicaSets.New()
+	if err != nil {
+		return nil, createException(m, err.Error())
+	}
+
+	if value, err = newReplicaSetsObj.Update(args...); err != nil {
 		return nil, createException(m, err.Error())
 	}
 	return value, nil
