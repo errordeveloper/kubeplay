@@ -5,11 +5,9 @@ import (
 	"fmt"
 	"os"
 	"regexp"
-	"strings"
 
 	"github.com/chzyer/readline"
 	"github.com/erikh/box/builder/signal"
-	"github.com/erikh/box/log"
 	mruby "github.com/mitchellh/go-mruby"
 
 	"k8s.io/client-go/kubernetes"
@@ -113,10 +111,6 @@ func NewRubyKube(omitFuncs []string, rl *readline.Instance) (*RubyKube, error) {
 func (rk *RubyKube) AddVerb(name string, fn verbFunc, args mruby.ArgSpec) {
 	hookFunc := func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
 		args := m.GetArgs()
-		strArgs := extractStringArgs(args)
-
-		log.BuildStep(name, strings.Join(strArgs, ", "))
-
 		return fn(rk, args, m, self)
 	}
 
