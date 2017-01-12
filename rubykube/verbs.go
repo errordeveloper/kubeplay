@@ -40,7 +40,7 @@ func pods(rk *RubyKube, args []*mruby.MrbValue, m *mruby.Mrb, self *mruby.MrbVal
 		return nil, createException(m, err.Error())
 	}
 
-	if value, err = newPodsObj.Update(toValues(args)...); err != nil {
+	if value, err = newPodsObj.Update(args...); err != nil {
 		return nil, createException(m, err.Error())
 	}
 	return value, nil

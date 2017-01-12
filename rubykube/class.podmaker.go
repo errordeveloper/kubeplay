@@ -11,6 +11,7 @@ import (
 type podMakerClass struct {
 	class   *mruby.Class
 	objects []podMakerInstance
+	rk      *RubyKube
 }
 
 type podMakerInstance struct {
@@ -23,7 +24,7 @@ type podMakerInstanceVars struct {
 }
 
 func newPodMakerClass(rk *RubyKube) *podMakerClass {
-	c := &podMakerClass{objects: []podMakerInstance{}}
+	c := &podMakerClass{objects: []podMakerInstance{}, rk: rk}
 	c.class = definePodMakerClass(rk, c)
 	return c
 }

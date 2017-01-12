@@ -10,7 +10,7 @@ import (
 type labelSelectorClass struct {
 	class   *mruby.Class
 	objects []labelSelectorInstance
-	rk      *RubyKube // TODO copy to other classes
+	rk      *RubyKube
 }
 
 type labelSelectorInstance struct {

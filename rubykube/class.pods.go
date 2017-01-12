@@ -13,6 +13,7 @@ import (
 type podsClass struct {
 	class   *mruby.Class
 	objects []podsClassInstance
+	rk      *RubyKube
 }
 
 type podsClassInstance struct {
@@ -25,7 +26,7 @@ type podsClassInstanceVars struct {
 }
 
 func newPodsClass(rk *RubyKube) *podsClass {
-	c := &podsClass{objects: []podsClassInstance{}}
+	c := &podsClass{objects: []podsClassInstance{}, rk: rk}
 	c.class = definePodsClass(rk, c)
 	return c
 }
@@ -248,10 +249,6 @@ func (c *podsClass) LookupVars(this *mruby.MrbValue) (*podsClassInstanceVars, er
 	return nil, fmt.Errorf("could not find class instance")
 }
 
-func (o *podsClassInstance) Update(args ...mruby.Value) (mruby.Value, error) {
-	v, err := o.self.Call("get!", args...)
-	if err != nil {
-		return nil, err
-	}
-	return v, nil
+func (o *podsClassInstance) Update(args ...*mruby.MrbValue) (mruby.Value, error) {
+	return call(o.self, "get!", args...)
 }

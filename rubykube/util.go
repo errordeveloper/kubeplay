@@ -281,3 +281,11 @@ func toValues(args []*mruby.MrbValue) []mruby.Value {
 	}
 	return argv
 }
+
+func call(self *mruby.MrbValue, method string, args ...*mruby.MrbValue) (mruby.Value, error) {
+	v, err := self.Call(method, toValues(args)...)
+	if err != nil {
+		return nil, err
+	}
+	return v, nil
+}

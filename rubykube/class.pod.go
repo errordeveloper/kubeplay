@@ -12,6 +12,7 @@ import (
 type podClass struct {
 	class   *mruby.Class
 	objects []podClassInstance
+	rk      *RubyKube
 }
 
 type podClassInstance struct {
@@ -24,7 +25,7 @@ type podClassInstanceVars struct {
 }
 
 func newPodClass(rk *RubyKube) *podClass {
-	c := &podClass{objects: []podClassInstance{}}
+	c := &podClass{objects: []podClassInstance{}, rk: rk}
 	c.class = definePodClass(rk, c)
 	return c
 }
@@ -134,9 +135,5 @@ func (c *podClass) LookupVars(this *mruby.MrbValue) (*podClassInstanceVars, erro
 }
 
 func (o *podClassInstance) Update() (mruby.Value, error) {
-	v, err := o.self.Call("get!")
-	if err != nil {
-		return nil, err
-	}
-	return v, nil
+	return call(o.self, "get!")
 }
