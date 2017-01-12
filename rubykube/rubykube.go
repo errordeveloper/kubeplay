@@ -34,6 +34,7 @@ type Classes struct {
 	LabelCollector *labelCollectorClass
 	LabelKey       *labelKeyClass
 	ReplicaSets    *replicaSetsClass
+	DaemonSets     *daemonSetsClass
 }
 
 type CurrentState struct {
@@ -96,6 +97,7 @@ func NewRubyKube(omitFuncs []string, rl *readline.Instance) (*RubyKube, error) {
 	rk.classes.LabelCollector = newLabelCollectorClass(rk)
 	rk.classes.LabelKey = newLabelKeyClass(rk)
 	rk.classes.ReplicaSets = newReplicaSetsClass(rk)
+	rk.classes.DaemonSets = newDaemonSetsClass(rk)
 
 	rk.SetNamespace("*")
 	if err := rk.applyPatches(); err != nil {
