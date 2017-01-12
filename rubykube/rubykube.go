@@ -33,7 +33,7 @@ type Classes struct {
 	LabelSelector  *labelSelectorClass
 	LabelCollector *labelCollectorClass
 	LabelKey       *labelKeyClass
-	//ReplicaSets    *replicaSetsClass
+	ReplicaSets    *replicaSetsClass
 }
 
 type CurrentState struct {
@@ -95,7 +95,7 @@ func NewRubyKube(omitFuncs []string, rl *readline.Instance) (*RubyKube, error) {
 	rk.classes.LabelSelector = newLabelSelectorClass(rk)
 	rk.classes.LabelCollector = newLabelCollectorClass(rk)
 	rk.classes.LabelKey = newLabelKeyClass(rk)
-	//rk.classes.ReplicaSets = newReplicaSetsClass(rk)
+	rk.classes.ReplicaSets = newReplicaSetsClass(rk)
 
 	rk.SetNamespace("*")
 	if err := rk.applyPatches(); err != nil {
