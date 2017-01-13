@@ -8,9 +8,9 @@ import (
 	kapi "k8s.io/client-go/pkg/api/v1"
 )
 
-type podList kapi.PodList
+type podListTypeAlias kapi.PodList
 
-//go:generate gotemplate "./templates/resource" "podsClass(\"Pods\", pods, podList)"
+//go:generate gotemplate "./templates/resource" "podsClass(\"Pods\", pods, podListTypeAlias)"
 
 func (c *podsClass) defineOwnMethods() {
 	c.rk.appendMethods(c.class, map[string]methodDefintion{
@@ -97,7 +97,8 @@ func (c *podsClass) defineOwnMethods() {
 				if err != nil {
 					return nil, createException(m, err.Error())
 				}
-				newPodObj.vars.pod = &pod
+				p := podTypeAlias(pod)
+				newPodObj.vars.pod = &p
 				return newPodObj.self, nil
 			},
 			instanceMethod,
@@ -125,7 +126,8 @@ func (c *podsClass) defineOwnMethods() {
 					if err != nil {
 						return nil, createException(m, err.Error())
 					}
-					newPodObj.vars.pod = &vars.pods.Items[0]
+					p := podTypeAlias(vars.pods.Items[0])
+					newPodObj.vars.pod = &p
 					return newPodObj.self, nil
 				}
 				return nil, nil
@@ -145,7 +147,8 @@ func (c *podsClass) defineOwnMethods() {
 					if err != nil {
 						return nil, createException(m, err.Error())
 					}
-					newPodObj.vars.pod = &vars.pods.Items[rand.Intn(l)]
+					p := podTypeAlias(vars.pods.Items[rand.Intn(l)])
+					newPodObj.vars.pod = &p
 					return newPodObj.self, nil
 				}
 				return nil, nil
@@ -166,7 +169,8 @@ func (c *podsClass) defineOwnMethods() {
 					if err != nil {
 						return nil, createException(m, err.Error())
 					}
-					newPodObj.vars.pod = &vars.pods.Items[l-1]
+					p := podTypeAlias(vars.pods.Items[l-1])
+					newPodObj.vars.pod = &p
 					return newPodObj.self, nil
 				}
 				return nil, nil

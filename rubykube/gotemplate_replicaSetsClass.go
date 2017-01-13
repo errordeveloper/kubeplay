@@ -21,7 +21,7 @@ type replicaSetsClassInstance struct {
 }
 
 type replicaSetsClassInstanceVars struct {
-	replicaSets *replicaSetList
+	replicaSets *replicaSetListTypeAlias
 }
 
 func newReplicaSetsClass(rk *RubyKube) *replicaSetsClass {
@@ -76,7 +76,7 @@ func (c *replicaSetsClass) New() (*replicaSetsClassInstance, error) {
 	o := replicaSetsClassInstance{
 		self: s,
 		vars: &replicaSetsClassInstanceVars{
-			&replicaSetList{},
+			&replicaSetListTypeAlias{},
 		},
 	}
 	c.objects = append(c.objects, o)

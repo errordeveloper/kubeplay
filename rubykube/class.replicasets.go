@@ -8,9 +8,9 @@ import (
 	kext "k8s.io/client-go/pkg/apis/extensions/v1beta1"
 )
 
-type replicaSetList kext.ReplicaSetList
+type replicaSetListTypeAlias kext.ReplicaSetList
 
-//go:generate gotemplate "./templates/resource" "replicaSetsClass(\"ReplicaSets\", replicaSets, replicaSetList)"
+//go:generate gotemplate "./templates/resource" "replicaSetsClass(\"ReplicaSets\", replicaSets, replicaSetListTypeAlias)"
 
 func (c *replicaSetsClass) defineOwnMethods() {
 	c.rk.appendMethods(c.class, map[string]methodDefintion{

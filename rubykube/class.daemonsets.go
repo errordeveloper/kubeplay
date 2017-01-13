@@ -8,9 +8,9 @@ import (
 	kext "k8s.io/client-go/pkg/apis/extensions/v1beta1"
 )
 
-type daemonSetList kext.DaemonSetList
+type daemonSetListTypeAlias kext.DaemonSetList
 
-//go:generate gotemplate "./templates/resource" "daemonSetsClass(\"DaemonSets\", daemonSets, daemonSetList)"
+//go:generate gotemplate "./templates/resource" "daemonSetsClass(\"DaemonSets\", daemonSets, daemonSetListTypeAlias)"
 
 func (c *daemonSetsClass) defineOwnMethods() {
 	c.rk.appendMethods(c.class, map[string]methodDefintion{

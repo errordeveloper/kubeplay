@@ -21,7 +21,7 @@ type podsClassInstance struct {
 }
 
 type podsClassInstanceVars struct {
-	pods *podList
+	pods *podListTypeAlias
 }
 
 func newPodsClass(rk *RubyKube) *podsClass {
@@ -76,7 +76,7 @@ func (c *podsClass) New() (*podsClassInstance, error) {
 	o := podsClassInstance{
 		self: s,
 		vars: &podsClassInstanceVars{
-			&podList{},
+			&podListTypeAlias{},
 		},
 	}
 	c.objects = append(c.objects, o)

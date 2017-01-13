@@ -124,7 +124,8 @@ func definePodMakerClass(rk *RubyKube, p *podMakerClass) *mruby.Class {
 					pod.ObjectMeta.Namespace = v
 				}
 
-				newPodObj.vars.pod = &pod
+				p := podTypeAlias(pod)
+				newPodObj.vars.pod = &p
 
 				vars.pod = newPodObj.self
 				return vars.pod, nil
