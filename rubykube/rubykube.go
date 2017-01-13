@@ -97,7 +97,9 @@ func NewRubyKube(omitFuncs []string, rl *readline.Instance) (*RubyKube, error) {
 	rk.classes.LabelCollector = newLabelCollectorClass(rk)
 	rk.classes.LabelKey = newLabelKeyClass(rk)
 	rk.classes.ReplicaSets = newReplicaSetsClass(rk)
+	rk.classes.ReplicaSets.defineOwnMethods()
 	rk.classes.DaemonSets = newDaemonSetsClass(rk)
+	rk.classes.DaemonSets.defineOwnMethods()
 
 	rk.SetNamespace("*")
 	if err := rk.applyPatches(); err != nil {

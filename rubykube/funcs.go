@@ -74,8 +74,13 @@ type methodDefintion struct {
 	methodType int
 }
 
-func defineClass(rk *RubyKube, name string, methods map[string]methodDefintion) *mruby.Class {
+func (rk *RubyKube) defineClass(name string, methods map[string]methodDefintion) *mruby.Class {
 	class := rk.mrb.DefineClass(name, rk.classes.Root)
+	rk.appendMethods(class, methods)
+	return class
+}
+
+func (rk *RubyKube) appendMethods(class *mruby.Class, methods map[string]methodDefintion) {
 	for name, m := range methods {
 		if m.methodType == classMethod {
 			class.DefineClassMethod(name, m.methodFunc, m.argSpec)
@@ -83,5 +88,8 @@ func defineClass(rk *RubyKube, name string, methods map[string]methodDefintion) 
 			class.DefineMethod(name, m.methodFunc, m.argSpec)
 		}
 	}
-	return class
+}
+
+func defineClass(rk *RubyKube, name string, methods map[string]methodDefintion) *mruby.Class {
+	return rk.defineClass(name, methods)
 }
