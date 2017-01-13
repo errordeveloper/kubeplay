@@ -91,6 +91,7 @@ func NewRubyKube(omitFuncs []string, rl *readline.Instance) (*RubyKube, error) {
 
 	rk.classes = Classes{Root: rk.mrb.DefineClass("RubyKube", nil)}
 	rk.classes.Pods = newPodsClass(rk)
+	rk.classes.Pods.defineOwnMethods()
 	rk.classes.Pod = newPodClass(rk)
 	rk.classes.PodMaker = newPodMakerClass(rk)
 	rk.classes.LabelSelector = newLabelSelectorClass(rk)
