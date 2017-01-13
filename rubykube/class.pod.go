@@ -24,8 +24,7 @@ func (c *podClass) defineOwnMethods() {
 				if err != nil {
 					return nil, createException(m, err.Error())
 				}
-				p := podTypeAlias(*pod)
-				vars.pod = &p
+				vars.pod = podTypeAlias(*pod)
 				return self, nil
 			},
 			instanceMethod,

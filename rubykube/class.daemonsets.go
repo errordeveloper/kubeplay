@@ -38,9 +38,7 @@ func (c *daemonSetsClass) defineOwnMethods() {
 						}
 					}
 				} else {
-					for _, c := range daemonSets.Items {
-						vars.daemonSets.Items = append(vars.daemonSets.Items, c)
-					}
+					vars.daemonSets = daemonSetListTypeAlias(*daemonSets)
 				}
 				return self, nil
 			},

@@ -38,9 +38,7 @@ func (c *replicaSetsClass) defineOwnMethods() {
 						}
 					}
 				} else {
-					for _, replicaSet := range replicaSets.Items {
-						vars.replicaSets.Items = append(vars.replicaSets.Items, replicaSet)
-					}
+					vars.replicaSets = replicaSetListTypeAlias(*replicaSets)
 				}
 				return self, nil
 			},

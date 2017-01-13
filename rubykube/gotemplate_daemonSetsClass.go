@@ -21,7 +21,7 @@ type daemonSetsClassInstance struct {
 }
 
 type daemonSetsClassInstanceVars struct {
-	daemonSets *daemonSetListTypeAlias
+	daemonSets daemonSetListTypeAlias
 }
 
 func newDaemonSetsClass(rk *RubyKube) *daemonSetsClass {
@@ -76,7 +76,7 @@ func (c *daemonSetsClass) New() (*daemonSetsClassInstance, error) {
 	o := daemonSetsClassInstance{
 		self: s,
 		vars: &daemonSetsClassInstanceVars{
-			&daemonSetListTypeAlias{},
+			daemonSetListTypeAlias{},
 		},
 	}
 	c.objects = append(c.objects, o)

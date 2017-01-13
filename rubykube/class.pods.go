@@ -38,9 +38,7 @@ func (c *podsClass) defineOwnMethods() {
 						}
 					}
 				} else {
-					for _, pod := range pods.Items {
-						vars.pods.Items = append(vars.pods.Items, pod)
-					}
+					vars.pods = podListTypeAlias(*pods)
 				}
 				return self, nil
 			},
@@ -97,8 +95,7 @@ func (c *podsClass) defineOwnMethods() {
 				if err != nil {
 					return nil, createException(m, err.Error())
 				}
-				p := podTypeAlias(pod)
-				newPodObj.vars.pod = &p
+				newPodObj.vars.pod = podTypeAlias(pod)
 				return newPodObj.self, nil
 			},
 			instanceMethod,
@@ -126,8 +123,7 @@ func (c *podsClass) defineOwnMethods() {
 					if err != nil {
 						return nil, createException(m, err.Error())
 					}
-					p := podTypeAlias(vars.pods.Items[0])
-					newPodObj.vars.pod = &p
+					newPodObj.vars.pod = podTypeAlias(vars.pods.Items[0])
 					return newPodObj.self, nil
 				}
 				return nil, nil
@@ -147,8 +143,7 @@ func (c *podsClass) defineOwnMethods() {
 					if err != nil {
 						return nil, createException(m, err.Error())
 					}
-					p := podTypeAlias(vars.pods.Items[rand.Intn(l)])
-					newPodObj.vars.pod = &p
+					newPodObj.vars.pod = podTypeAlias(vars.pods.Items[rand.Intn(l)])
 					return newPodObj.self, nil
 				}
 				return nil, nil
@@ -169,8 +164,7 @@ func (c *podsClass) defineOwnMethods() {
 					if err != nil {
 						return nil, createException(m, err.Error())
 					}
-					p := podTypeAlias(vars.pods.Items[l-1])
-					newPodObj.vars.pod = &p
+					newPodObj.vars.pod = podTypeAlias(vars.pods.Items[l-1])
 					return newPodObj.self, nil
 				}
 				return nil, nil

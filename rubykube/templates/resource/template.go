@@ -25,7 +25,7 @@ type RubyKubeClassInstance struct {
 }
 
 type RubyKubeClassInstanceVars struct {
-	instanceVariableName *instanceVariableType
+	instanceVariableName instanceVariableType
 }
 
 func NewRubyKubeClass(rk *RubyKube) *RubyKubeClass {
@@ -80,7 +80,7 @@ func (c *RubyKubeClass) New() (*RubyKubeClassInstance, error) {
 	o := RubyKubeClassInstance{
 		self: s,
 		vars: &RubyKubeClassInstanceVars{
-			&instanceVariableType{},
+			instanceVariableType{},
 		},
 	}
 	c.objects = append(c.objects, o)
