@@ -8,38 +8,27 @@ import (
 	kapi "k8s.io/client-go/pkg/api/v1"
 )
 
-type podMakerClass struct {
-	class   *mruby.Class
-	objects []podMakerInstance
-	rk      *RubyKube
-}
-
-type podMakerInstance struct {
-	self *mruby.MrbValue
-	vars *podMakerInstanceVars
-}
-
-type podMakerInstanceVars struct {
+type podMakerClassInstanceVars struct {
 	pod *mruby.MrbValue
 }
 
-func newPodMakerClass(rk *RubyKube) *podMakerClass {
-	c := &podMakerClass{objects: []podMakerInstance{}, rk: rk}
-	c.class = definePodMakerClass(rk, c)
-	return c
+func newPodMakerClassInstanceVars() *podMakerClassInstanceVars {
+	return &podMakerClassInstanceVars{nil}
 }
 
-func definePodMakerClass(rk *RubyKube, p *podMakerClass) *mruby.Class {
-	return defineClass(rk, "PodMaker", map[string]methodDefintion{
+//go:generate gotemplate "./templates/basic" "podMakerClass(\"PodMaker\", newPodMakerClassInstanceVars, podMakerClassInstanceVars)"
+
+func (c *podMakerClass) defineOwnMethods() {
+	c.rk.appendMethods(c.class, map[string]methodDefintion{
 		"pod!": {
 			mruby.ArgsReq(1), func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
-				vars, err := p.LookupVars(self)
+				vars, err := c.LookupVars(self)
 				if err != nil {
 					return nil, createException(m, err.Error())
 				}
 
 				args := m.GetArgs()
-				if err := standardCheck(rk, args, 1); err != nil {
+				if err := standardCheck(c.rk, args, 1); err != nil {
 					return nil, createException(m, err.Error())
 				}
 
@@ -108,7 +97,7 @@ func definePodMakerClass(rk *RubyKube, p *podMakerClass) *mruby.Class {
 				container.Name = name
 				labels := map[string]string{"name": name}
 
-				newPodObj, err := rk.classes.Pod.New()
+				newPodObj, err := c.rk.classes.Pod.New()
 				if err != nil {
 					return nil, createException(m, err.Error())
 				}
@@ -131,37 +120,9 @@ func definePodMakerClass(rk *RubyKube, p *podMakerClass) *mruby.Class {
 			},
 			instanceMethod,
 		},
-		"object_count": {
-			mruby.ArgsNone(), func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
-				return m.FixnumValue(len(p.objects)), nil
-			},
-			classMethod,
-		},
 	})
 }
 
-func (c *podMakerClass) New() (*podMakerInstance, error) {
-	s, err := c.class.New()
-	if err != nil {
-		return nil, err
-	}
-	o := podMakerInstance{
-		self: s,
-		vars: &podMakerInstanceVars{nil},
-	}
-	c.objects = append(c.objects, o)
-	return &o, nil
-}
-
-func (c *podMakerClass) LookupVars(this *mruby.MrbValue) (*podMakerInstanceVars, error) {
-	for _, that := range c.objects {
-		if *this == *that.self {
-			return that.vars, nil
-		}
-	}
-	return nil, fmt.Errorf("could not find class instance")
-}
-
-func (o *podMakerInstance) Update(args ...mruby.Value) (mruby.Value, error) {
+func (o *podMakerClassInstance) Update(args ...mruby.Value) (mruby.Value, error) {
 	return nil, nil
 }
