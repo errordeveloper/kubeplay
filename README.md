@@ -116,8 +116,8 @@ Some well-known labels have shortuct, e.g.
 ```
 
 You can use `make_label_selector` verb to construct these expressions, or simply pass a lambda like this:
-```console
-kubeplay (namespace="*")> pods labels: -> { @app !~ %w(foo bar); @version =~ %w(0.1 0.2); @tier =~ %w(frontend backend); }
+```ruby
+replicasets labels: -> { @app !~ %w(foo bar); @version =~ %w(0.1 0.2); @tier =~ %w(frontend backend); }
 ```
 
 Another allowed key for the hash argument of `pods` verb is `:fields`, which can be used to match resource fields.
