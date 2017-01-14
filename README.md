@@ -24,10 +24,10 @@ kubeplay (namespace="*")> puts @pod.to_json # output the pod definition in JSON
     ...
   }
 }
-kubeplay> (namespace="*") puts @pod.to_ruby # output the same as a Ruby hash
+kubeplay (namespace="*")> puts @pod.to_ruby # output the same as a Ruby hash
 { ... }
 kubeplay (namespace="*")> @pod.delete!
-kubeplay> ^D
+kubeplay (namespace="*")> ^D
 > 
 ```
 
