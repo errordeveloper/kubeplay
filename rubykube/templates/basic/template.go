@@ -41,14 +41,16 @@ func DefineRubyKubeClass(rk *RubyKube, c *RubyKubeClass) *mruby.Class {
 	})
 }
 
-func (c *RubyKubeClass) New() (*RubyKubeClassInstance, error) {
+func (c *RubyKubeClass) New(args ...mruby.Value) (*RubyKubeClassInstance, error) {
 	s, err := c.class.New()
 	if err != nil {
 		return nil, err
 	}
+
+	v, err := newClassInstanceVars(c, s, args...)
 	o := RubyKubeClassInstance{
 		self: s,
-		vars: newClassInstanceVars(),
+		vars: v,
 	}
 	c.objects = append(c.objects, o)
 	return &o, nil

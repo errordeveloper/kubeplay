@@ -89,7 +89,3 @@ func (rk *RubyKube) appendMethods(class *mruby.Class, methods map[string]methodD
 		}
 	}
 }
-
-func defineClass(rk *RubyKube, name string, methods map[string]methodDefintion) *mruby.Class {
-	return rk.defineClass(name, methods)
-}

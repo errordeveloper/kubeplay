@@ -12,8 +12,8 @@ type podMakerClassInstanceVars struct {
 	pod *mruby.MrbValue
 }
 
-func newPodMakerClassInstanceVars() *podMakerClassInstanceVars {
-	return &podMakerClassInstanceVars{nil}
+func newPodMakerClassInstanceVars(c *podMakerClass, s *mruby.MrbValue, args ...mruby.Value) (*podMakerClassInstanceVars, error) {
+	return &podMakerClassInstanceVars{nil}, nil
 }
 
 //go:generate gotemplate "./templates/basic" "podMakerClass(\"PodMaker\", newPodMakerClassInstanceVars, podMakerClassInstanceVars)"
