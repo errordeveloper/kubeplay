@@ -33,11 +33,11 @@ kubeplay> ^D
 
 All resources can be converted to a Ruby-native reprsentation, which means you can do things like this:
 ```ruby
-metadata = replicasets("*/").to_ruby.items.map do |k,v|
+@metadata = replicasets("*/").to_ruby.items.map do |k,v|
    v.metadata
 end
 
-metadata.each do |i|
+@metadata.each do |i|
     puts "Name:\t#{i.name}"
     puts "Labels:\t#{i.labels}"
     puts
