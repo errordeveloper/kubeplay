@@ -277,6 +277,18 @@ func (rk *RubyKube) resourceArgs(args []*mruby.MrbValue) (string, *regexp.Regexp
 		return nil
 	}
 
+	evalSelector := func(block *mruby.MrbValue) error {
+		// TODO: should also allow fields in the same block, when we have a DSL for it
+		newLabelNameObj, err := rk.classes.LabelSelector.New(block)
+		if err != nil {
+			return err
+		}
+
+		listOptions.LabelSelector = newLabelNameObj.self.String()
+
+		return nil
+	}
+
 	parseSelectors := func(arg *mruby.MrbValue) error {
 		stringCollection, err := NewParamsCollection(arg,
 			params{
@@ -284,16 +296,7 @@ func (rk *RubyKube) resourceArgs(args []*mruby.MrbValue) (string, *regexp.Regexp
 				required:  []string{},
 				valueType: mruby.TypeString,
 				procHandlers: map[string]paramProcHandler{
-					"labels": func(block *mruby.MrbValue) error {
-						newLabelNameObj, err := rk.classes.LabelSelector.New(block)
-						if err != nil {
-							return err
-						}
-
-						listOptions.LabelSelector = newLabelNameObj.self.String()
-
-						return nil
-					},
+					"labels": evalSelector,
 				},
 			},
 		)
@@ -333,6 +336,10 @@ func (rk *RubyKube) resourceArgs(args []*mruby.MrbValue) (string, *regexp.Regexp
 			if err := parseSelectors(args[0]); err != nil {
 				return fail(err)
 			}
+		case mruby.TypeProc:
+			if err := evalSelector(args[0]); err != nil {
+				return fail(err)
+			}
 		case mruby.TypeArray:
 			// TODO: we could allow users to collect object matching multiple globs
 			return fail(fmt.Errorf("Not yet implemented!"))
@@ -355,6 +362,13 @@ func (rk *RubyKube) resourceArgs(args []*mruby.MrbValue) (string, *regexp.Regexp
 				return fail(secondArgError("selector"))
 			}
 			if err := parseSelectors(args[1]); err != nil {
+				return fail(err)
+			}
+		case mruby.TypeProc:
+			if hasSelectors {
+				return fail(secondArgError("selector"))
+			}
+			if err := evalSelector(args[1]); err != nil {
 				return fail(err)
 			}
 		case mruby.TypeArray:
