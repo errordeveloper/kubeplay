@@ -48,6 +48,10 @@ func (c *RubyKubeClass) New(args ...mruby.Value) (*RubyKubeClassInstance, error)
 	}
 
 	v, err := newClassInstanceVars(c, s, args...)
+	if err != nil {
+		return nil, err
+	}
+
 	o := RubyKubeClassInstance{
 		self: s,
 		vars: v,

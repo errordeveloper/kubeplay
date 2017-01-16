@@ -44,6 +44,10 @@ func (c *podMakerClass) New(args ...mruby.Value) (*podMakerClassInstance, error)
 	}
 
 	v, err := newPodMakerClassInstanceVars(c, s, args...)
+	if err != nil {
+		return nil, err
+	}
+
 	o := podMakerClassInstance{
 		self: s,
 		vars: v,

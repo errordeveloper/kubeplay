@@ -13,11 +13,11 @@ type labelExpression struct {
 	values   []string
 }
 
-type matchFunc func(labelExpression)
+type labelMatchFunc func(labelExpression)
 
 type labelKeyClassInstanceVars struct {
 	name    string
-	onMatch matchFunc
+	onMatch labelMatchFunc
 }
 
 func newLabelKeyClassInstanceVars(c *labelKeyClass, s *mruby.MrbValue, args ...mruby.Value) (*labelKeyClassInstanceVars, error) {

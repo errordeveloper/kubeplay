@@ -33,6 +33,9 @@ type Classes struct {
 	LabelSelector  *labelSelectorClass
 	LabelCollector *labelCollectorClass
 	LabelKey       *labelKeyClass
+	FieldSelector  *fieldSelectorClass
+	FieldCollector *fieldCollectorClass
+	FieldKey       *fieldKeyClass
 	ReplicaSets    *replicaSetsClass
 	DaemonSets     *daemonSetsClass
 }
@@ -108,6 +111,15 @@ func NewRubyKube(omitFuncs []string, rl *readline.Instance) (*RubyKube, error) {
 
 	rk.classes.LabelKey = newLabelKeyClass(rk)
 	rk.classes.LabelKey.defineOwnMethods()
+
+	rk.classes.FieldSelector = newFieldSelectorClass(rk)
+	rk.classes.FieldSelector.defineOwnMethods()
+
+	rk.classes.FieldCollector = newFieldCollectorClass(rk)
+	rk.classes.FieldCollector.defineOwnMethods()
+
+	rk.classes.FieldKey = newFieldKeyClass(rk)
+	rk.classes.FieldKey.defineOwnMethods()
 
 	rk.classes.ReplicaSets = newReplicaSetsClass(rk)
 	rk.classes.ReplicaSets.defineOwnMethods()

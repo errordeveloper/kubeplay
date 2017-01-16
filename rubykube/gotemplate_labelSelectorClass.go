@@ -44,6 +44,10 @@ func (c *labelSelectorClass) New(args ...mruby.Value) (*labelSelectorClassInstan
 	}
 
 	v, err := newLabelSelectorClassInstanceVars(c, s, args...)
+	if err != nil {
+		return nil, err
+	}
+
 	o := labelSelectorClassInstance{
 		self: s,
 		vars: v,

@@ -44,6 +44,10 @@ func (c *labelKeyClass) New(args ...mruby.Value) (*labelKeyClassInstance, error)
 	}
 
 	v, err := newLabelKeyClassInstanceVars(c, s, args...)
+	if err != nil {
+		return nil, err
+	}
+
 	o := labelKeyClassInstance{
 		self: s,
 		vars: v,

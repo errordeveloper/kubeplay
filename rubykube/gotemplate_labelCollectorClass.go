@@ -44,6 +44,10 @@ func (c *labelCollectorClass) New(args ...mruby.Value) (*labelCollectorClassInst
 	}
 
 	v, err := newLabelCollectorClassInstanceVars(c, s, args...)
+	if err != nil {
+		return nil, err
+	}
+
 	o := labelCollectorClassInstance{
 		self: s,
 		vars: v,
