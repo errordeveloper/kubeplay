@@ -57,7 +57,6 @@ func (c *fieldKeyClass) New(args ...mruby.Value) (*fieldKeyClassInstance, error)
 }
 
 func (c *fieldKeyClass) LookupVars(this *mruby.MrbValue) (*fieldKeyClassInstanceVars, error) {
-	fmt.Printf("c.objects=%v\n", c.objects)
 	for _, that := range c.objects {
 		if *this == *that.self {
 			return that.vars, nil

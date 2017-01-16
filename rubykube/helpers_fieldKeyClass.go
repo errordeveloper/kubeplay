@@ -105,11 +105,20 @@ func (c *fieldKeyClass) defineOwnMethods() {
 		},
 		"method_missing": {
 			mruby.ArgsReq(1), func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
-				value, err := c.class.New(toValues(m.GetArgs())...)
+				vars, err := c.LookupVars(self)
 				if err != nil {
 					return nil, createException(m, err.Error())
 				}
-				return value, nil
+
+				newFieldKeyObj, err := c.New(toValues(m.GetArgs())...)
+				if err != nil {
+					return nil, createException(m, err.Error())
+				}
+
+				newFieldKeyObj.vars.name = append(vars.name, newFieldKeyObj.vars.name...)
+				newFieldKeyObj.vars.onMatch = vars.onMatch
+
+				return newFieldKeyObj.self, nil
 			},
 			instanceMethod,
 		},
