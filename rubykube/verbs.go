@@ -24,6 +24,7 @@ var verbJumpTable = map[string]verbDefinition{
 	"daemonsets":          {daemonSets, mruby.ArgsReq(0) | mruby.ArgsOpt(2)},
 	"make_pod":            {makePod, mruby.ArgsReq(1)},
 	"make_label_selector": {makeLabelSelector, mruby.ArgsReq(1)},
+	"make_field_selector": {makeFieldSelector, mruby.ArgsReq(1)},
 	"using":               {using, mruby.ArgsReq(0) | mruby.ArgsOpt(2)},
 	"namespace":           {namespace, mruby.ArgsReq(0) | mruby.ArgsOpt(2)},
 	"def_alias":           {defAlias, mruby.ArgsReq(2)},
@@ -112,6 +113,19 @@ func makeLabelSelector(rk *RubyKube, args []*mruby.MrbValue, m *mruby.Mrb, self 
 	}
 
 	return newLabelNameObj.self, nil
+}
+
+func makeFieldSelector(rk *RubyKube, args []*mruby.MrbValue, m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
+	if err := checkArgs(args, 1); err != nil {
+		return nil, createException(m, err.Error())
+	}
+
+	newFieldNameObj, err := rk.classes.FieldSelector.New(toValues(args)...)
+	if err != nil {
+		return nil, createException(m, err.Error())
+	}
+
+	return newFieldNameObj.self, nil
 }
 
 func using(rk *RubyKube, args []*mruby.MrbValue, m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
