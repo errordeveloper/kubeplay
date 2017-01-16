@@ -35,28 +35,31 @@ func newFieldCollectorClassInstanceVars(c *fieldCollectorClass, s *mruby.MrbValu
 
 //go:generate gotemplate "./templates/basic" "fieldCollectorClass(\"FieldCollector\", newFieldCollectorClassInstanceVars, fieldCollectorClassInstanceVars)"
 
+func (c *fieldCollectorClass) makeFieldMethod() methodDefintion {
+	return methodDefintion{
+		mruby.ArgsReq(1), func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
+			vars, err := c.LookupVars(self)
+			if err != nil {
+				return nil, createException(m, err.Error())
+			}
+
+			newFieldKeyObj, err := c.rk.classes.FieldKey.New(toValues(m.GetArgs())...)
+			if err != nil {
+				return nil, createException(m, err.Error())
+			}
+
+			// let it append to my fields
+			newFieldKeyObj.vars.onMatch = func(e fieldExpression) { vars.fields = append(vars.fields, e) }
+
+			return newFieldKeyObj.self, nil
+		},
+		instanceMethod,
+	}
+}
+
 func (c *fieldCollectorClass) defineOwnMethods() {
 	c.rk.appendMethods(c.class, map[string]methodDefintion{
-		"field": {
-			mruby.ArgsReq(1), func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
-				vars, err := c.LookupVars(self)
-				if err != nil {
-					return nil, createException(m, err.Error())
-				}
-
-				newFieldKeyObj, err := c.rk.classes.FieldKey.New(toValues(m.GetArgs())...)
-				if err != nil {
-					return nil, createException(m, err.Error())
-				}
-
-				// let it append to my fields
-				newFieldKeyObj.vars.onMatch = func(e fieldExpression) {
-					vars.fields = append(vars.fields, e)
-				}
-
-				return newFieldKeyObj.self, nil
-			},
-			instanceMethod,
-		},
+		"field":          c.makeFieldMethod(),
+		"method_missing": c.makeFieldMethod(),
 	})
 }
