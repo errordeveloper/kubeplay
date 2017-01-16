@@ -7,7 +7,7 @@ import (
 	"regexp"
 
 	"github.com/chzyer/readline"
-	"github.com/erikh/box/builder/signal"
+	//"github.com/erikh/box/signal"
 	mruby "github.com/mitchellh/go-mruby"
 
 	"k8s.io/client-go/kubernetes"
@@ -85,7 +85,7 @@ func NewRubyKube(omitFuncs []string, rl *readline.Instance) (*RubyKube, error) {
 		}
 	}
 
-	signal.SetSignal(nil)
+	//signal.SignalHandler(nil)
 
 	rk.clientset, err = kubernetes.NewForConfig(config)
 	if err != nil {

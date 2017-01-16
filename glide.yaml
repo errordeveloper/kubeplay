@@ -2,11 +2,10 @@ package: github.com/errordeveloper/kubeplay
 import:
 - package: github.com/chzyer/readline
   version: ^1.4.0
-- package: github.com/erikh/box
-  version: ^0.3.3
-  subpackages:
-  - builder/signal
-  - log
+#- package: github.com/erikh/box
+#  version: ^0.3.3
+#  subpackages:
+#  - signal
 - package: github.com/mitchellh/go-mruby
   #repo: https://github.com/erikh/go-mruby
   #version: c474c62
