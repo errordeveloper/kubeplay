@@ -109,6 +109,7 @@ func (c *labelKeyClass) defineOwnMethods() {
 			mruby.ArgsReq(1), func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
 				return nil, nil
 			},
-			instanceMethod},
+			instanceMethod,
+		},
 	})
 }
