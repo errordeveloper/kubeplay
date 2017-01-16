@@ -75,7 +75,7 @@ func (c *labelCollectorClass) defineOwnMethods() {
 					return nil, createException(m, err.Error())
 				}
 
-				// let it append to my lables
+				// let it append to my labels
 				newLabelKeyObj.vars.onMatch = func(e labelExpression) {
 					vars.labels = append(vars.labels, e)
 				}
