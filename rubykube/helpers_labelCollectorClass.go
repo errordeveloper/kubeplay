@@ -8,6 +8,7 @@ import (
 
 type labelCollectorClassInstanceVars struct {
 	labels []labelExpression
+	eval   func() error
 }
 
 func newLabelCollectorClassInstanceVars(c *labelCollectorClass, s *mruby.MrbValue, args ...mruby.Value) (*labelCollectorClassInstanceVars, error) {
@@ -19,7 +20,15 @@ func newLabelCollectorClassInstanceVars(c *labelCollectorClass, s *mruby.MrbValu
 		return nil, fmt.Errorf("Block must be given")
 	}
 
-	o := &labelCollectorClassInstanceVars{[]labelExpression{}}
+	o := &labelCollectorClassInstanceVars{
+		labels: []labelExpression{},
+		eval: func() error {
+			if _, err := s.CallBlock("instance_eval", args[0]); err != nil {
+				return err
+			}
+			return nil
+		},
+	}
 
 	for _, v := range []string{
 		"app",
@@ -50,10 +59,6 @@ func newLabelCollectorClassInstanceVars(c *labelCollectorClass, s *mruby.MrbValu
 		if _, err := s.Call("instance_variable_set", variableName, l.self); err != nil {
 			return nil, err
 		}
-	}
-
-	if _, err := s.CallBlock("instance_eval", args[0]); err != nil {
-		return nil, err
 	}
 
 	return o, nil

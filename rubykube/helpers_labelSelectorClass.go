@@ -21,6 +21,10 @@ func newLabelSelectorClassInstanceVars(c *labelSelectorClass, s *mruby.MrbValue,
 		return nil, err
 	}
 
+	if err := newLabelCollectorObj.vars.eval(); err != nil {
+		return nil, err
+	}
+
 	return &labelSelectorClassInstanceVars{newLabelCollectorObj}, nil
 }
 
