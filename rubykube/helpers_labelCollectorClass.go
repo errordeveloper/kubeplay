@@ -11,6 +11,20 @@ type labelCollectorClassInstanceVars struct {
 	eval   func() error
 }
 
+var wellKnownLabels = []string{
+	"app",
+	"name",
+	"org",
+	"owner",
+	"project",
+	"revision",
+	"service",
+	"team",
+	"tier",
+	"v",
+	"version",
+}
+
 func newLabelCollectorClassInstanceVars(c *labelCollectorClass, s *mruby.MrbValue, args ...mruby.Value) (*labelCollectorClassInstanceVars, error) {
 	if len(args) != 1 {
 		return nil, fmt.Errorf("Exactly one argument must supplied")
@@ -30,19 +44,7 @@ func newLabelCollectorClassInstanceVars(c *labelCollectorClass, s *mruby.MrbValu
 		},
 	}
 
-	for _, v := range []string{
-		"app",
-		"name",
-		"org",
-		"owner",
-		"project",
-		"revision",
-		"service",
-		"team",
-		"tier",
-		"v",
-		"version",
-	} {
+	for _, v := range wellKnownLabels {
 		// could do this, but it won't work cause we need to set onMatch somehow...
 		// c.rk.mrb.LoadString(fmt.Sprintf("@%s = RubyKube::LabelKey.new(%s)", v, v))
 		variableName, keyName := c.rk.mrb.StringValue("@"+v), c.rk.mrb.StringValue(v)
@@ -66,28 +68,50 @@ func newLabelCollectorClassInstanceVars(c *labelCollectorClass, s *mruby.MrbValu
 
 //go:generate gotemplate "./templates/basic" "labelCollectorClass(\"LabelCollector\", newLabelCollectorClassInstanceVars, labelCollectorClassInstanceVars)"
 
+func (c *labelCollectorClass) makeLableMethod() methodDefintion {
+	return methodDefintion{
+		mruby.ArgsReq(1), func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
+			vars, err := c.LookupVars(self)
+			if err != nil {
+				return nil, createException(m, err.Error())
+			}
+
+			newLabelKeyObj, err := c.rk.classes.LabelKey.New(toValues(m.GetArgs())...)
+			if err != nil {
+				return nil, createException(m, err.Error())
+			}
+
+			// let it append to my labels
+			newLabelKeyObj.vars.onMatch = func(e labelExpression) {
+				vars.labels = append(vars.labels, e)
+			}
+
+			return newLabelKeyObj.self, nil
+		},
+		instanceMethod,
+	}
+}
+
+func (c *labelCollectorClass) makeFieldMethod() methodDefintion {
+	return methodDefintion{
+		mruby.ArgsReq(1), func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
+			newFieldKeyObj, err := c.rk.classes.FieldKey.New(toValues(m.GetArgs())...)
+			if err != nil {
+				return nil, createException(m, err.Error())
+			}
+
+			newFieldKeyObj.vars.onMatch = func(_ fieldExpression) { return }
+
+			return newFieldKeyObj.self, nil
+		},
+		instanceMethod,
+	}
+}
+
 func (c *labelCollectorClass) defineOwnMethods() {
 	c.rk.appendMethods(c.class, map[string]methodDefintion{
-		"label": {
-			mruby.ArgsReq(1), func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
-				vars, err := c.LookupVars(self)
-				if err != nil {
-					return nil, createException(m, err.Error())
-				}
-
-				newLabelKeyObj, err := c.rk.classes.LabelKey.New(toValues(m.GetArgs())...)
-				if err != nil {
-					return nil, createException(m, err.Error())
-				}
-
-				// let it append to my labels
-				newLabelKeyObj.vars.onMatch = func(e labelExpression) {
-					vars.labels = append(vars.labels, e)
-				}
-
-				return newLabelKeyObj.self, nil
-			},
-			instanceMethod,
-		},
+		"field":          c.makeFieldMethod(),
+		"label":          c.makeLableMethod(),
+		"method_missing": c.makeLableMethod(),
 	})
 }

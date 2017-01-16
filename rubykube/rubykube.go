@@ -289,14 +289,24 @@ func (rk *RubyKube) resourceArgs(args []*mruby.MrbValue) (string, *regexp.Regexp
 		return nil
 	}
 
-	evalSelector := func(block *mruby.MrbValue) error {
-		// TODO: should also allow fields in the same block, when we have a DSL for it
+	evalLabelSelector := func(block *mruby.MrbValue) error {
 		newLabelNameObj, err := rk.classes.LabelSelector.New(block)
 		if err != nil {
 			return err
 		}
 
 		listOptions.LabelSelector = newLabelNameObj.self.String()
+
+		return nil
+	}
+
+	evalFieldSelector := func(block *mruby.MrbValue) error {
+		newFieldNameObj, err := rk.classes.FieldSelector.New(block)
+		if err != nil {
+			return err
+		}
+
+		listOptions.FieldSelector = newFieldNameObj.self.String()
 
 		return nil
 	}
@@ -308,7 +318,8 @@ func (rk *RubyKube) resourceArgs(args []*mruby.MrbValue) (string, *regexp.Regexp
 				required:  []string{},
 				valueType: mruby.TypeString,
 				procHandlers: map[string]paramProcHandler{
-					"labels": evalSelector,
+					"labels": evalLabelSelector,
+					"fields": evalFieldSelector,
 				},
 			},
 		)
@@ -349,7 +360,10 @@ func (rk *RubyKube) resourceArgs(args []*mruby.MrbValue) (string, *regexp.Regexp
 				return fail(err)
 			}
 		case mruby.TypeProc:
-			if err := evalSelector(args[0]); err != nil {
+			if err := evalLabelSelector(args[0]); err != nil {
+				return fail(err)
+			}
+			if err := evalFieldSelector(args[0]); err != nil {
 				return fail(err)
 			}
 		case mruby.TypeArray:
@@ -380,7 +394,10 @@ func (rk *RubyKube) resourceArgs(args []*mruby.MrbValue) (string, *regexp.Regexp
 			if hasSelectors {
 				return fail(secondArgError("selector"))
 			}
-			if err := evalSelector(args[1]); err != nil {
+			if err := evalLabelSelector(args[1]); err != nil {
+				return fail(err)
+			}
+			if err := evalFieldSelector(args[0]); err != nil {
 				return fail(err)
 			}
 		case mruby.TypeArray:

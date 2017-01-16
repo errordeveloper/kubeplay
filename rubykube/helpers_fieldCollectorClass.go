@@ -29,6 +29,22 @@ func newFieldCollectorClassInstanceVars(c *fieldCollectorClass, s *mruby.MrbValu
 			return nil
 		},
 	}
+	for _, v := range wellKnownLabels {
+		// could do this, but it won't work cause we need to set onMatch somehow...
+		// c.rk.mrb.LoadString(fmt.Sprintf("@%s = RubyKube::LabelKey.new(%s)", v, v))
+		variableName, keyName := c.rk.mrb.StringValue("@"+v), c.rk.mrb.StringValue(v)
+
+		l, err := c.rk.classes.LabelKey.New(keyName)
+		if err != nil {
+			return nil, err
+		}
+
+		l.vars.onMatch = func(e labelExpression) { return }
+
+		if _, err := s.Call("instance_variable_set", variableName, l.self); err != nil {
+			return nil, err
+		}
+	}
 
 	return o, nil
 }
@@ -57,9 +73,26 @@ func (c *fieldCollectorClass) makeFieldMethod() methodDefintion {
 	}
 }
 
+func (c *fieldCollectorClass) makeLableMethod() methodDefintion {
+	return methodDefintion{
+		mruby.ArgsAny(), func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
+			newLabelKeyObj, err := c.rk.classes.LabelKey.New(toValues(m.GetArgs())...)
+			if err != nil {
+				return nil, createException(m, err.Error())
+			}
+
+			newLabelKeyObj.vars.onMatch = func(_ labelExpression) { return }
+
+			return newLabelKeyObj.self, nil
+		},
+		instanceMethod,
+	}
+}
+
 func (c *fieldCollectorClass) defineOwnMethods() {
 	c.rk.appendMethods(c.class, map[string]methodDefintion{
 		"field":          c.makeFieldMethod(),
+		"label":          c.makeLableMethod(),
 		"method_missing": c.makeFieldMethod(),
 	})
 }

@@ -74,6 +74,15 @@ type methodDefintion struct {
 	methodType int
 }
 
+func emptyMethod() methodDefintion {
+	return methodDefintion{
+		mruby.ArgsAny(), func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
+			return nil, nil
+		},
+		instanceMethod,
+	}
+}
+
 func (rk *RubyKube) defineClass(name string, methods map[string]methodDefintion) *mruby.Class {
 	class := rk.mrb.DefineClass(name, rk.classes.Root)
 	rk.appendMethods(class, methods)
