@@ -21,6 +21,10 @@ func newFieldSelectorClassInstanceVars(c *fieldSelectorClass, s *mruby.MrbValue,
 		return nil, err
 	}
 
+	if err := newFieldCollectorObj.vars.eval(); err != nil {
+		return nil, err
+	}
+
 	return &fieldSelectorClassInstanceVars{newFieldCollectorObj}, nil
 }
 

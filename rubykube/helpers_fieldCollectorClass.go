@@ -8,6 +8,7 @@ import (
 
 type fieldCollectorClassInstanceVars struct {
 	fields []fieldExpression
+	eval   func() error
 }
 
 func newFieldCollectorClassInstanceVars(c *fieldCollectorClass, s *mruby.MrbValue, args ...mruby.Value) (*fieldCollectorClassInstanceVars, error) {
@@ -19,10 +20,14 @@ func newFieldCollectorClassInstanceVars(c *fieldCollectorClass, s *mruby.MrbValu
 		return nil, fmt.Errorf("Block must be given")
 	}
 
-	o := &fieldCollectorClassInstanceVars{[]fieldExpression{}}
-
-	if _, err := s.CallBlock("instance_eval", args[0]); err != nil {
-		return nil, err
+	o := &fieldCollectorClassInstanceVars{
+		fields: []fieldExpression{},
+		eval: func() error {
+			if _, err := s.CallBlock("instance_eval", args[0]); err != nil {
+				return err
+			}
+			return nil
+		},
 	}
 
 	return o, nil

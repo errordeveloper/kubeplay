@@ -92,13 +92,6 @@ func (c *fieldKeyClass) defineOwnMethods() {
 		"==": c.makeMatchMethod("=="),
 		"!~": c.makeMatchMethod("!="),
 		"!=": c.makeMatchMethod("!="),
-		//"initialize": {
-		//	mruby.ArgsNone(), func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
-		//		fmt.Println("Fu!")
-		//		return nil, nil
-		//	},
-		//	instanceMethod,
-		//},
 		"to_s": {
 			mruby.ArgsNone(), func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
 				vars, err := c.LookupVars(self)
