@@ -1,8 +1,6 @@
 package rubykube
 
 import (
-	"fmt"
-
 	mruby "github.com/mitchellh/go-mruby"
 	kapi "k8s.io/client-go/pkg/api/v1"
 )
@@ -15,8 +13,14 @@ func (c *servicesClass) getList(ns string, listOptions kapi.ListOptions) (*kapi.
 	return c.rk.clientset.Core().Services(ns).List(listOptions)
 }
 
-func (c *servicesClass) getItem(_ serviceListTypeAlias, _ int) (*podsClassInstance, error) {
-	return nil, fmt.Errorf("Not implemented!")
+func (c *servicesClass) getItem(services serviceListTypeAlias, index int) (*serviceClassInstance, error) {
+	newServiceObj, err := c.rk.classes.Service.New()
+	if err != nil {
+		return nil, err
+	}
+	service := services.Items[index]
+	newServiceObj.vars.service = serviceTypeAlias(service)
+	return newServiceObj, nil
 }
 
 //go:generate gotemplate "./templates/resource/list" "servicesListModule(servicesClass, \"Services\", services, serviceListTypeAlias)"
