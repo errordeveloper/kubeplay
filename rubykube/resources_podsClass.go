@@ -1,7 +1,6 @@
 package rubykube
 
 import (
-	"fmt"
 	"math/rand"
 
 	mruby "github.com/mitchellh/go-mruby"
@@ -12,52 +11,15 @@ type podListTypeAlias kapi.PodList
 
 //go:generate gotemplate "./templates/resource" "podsClass(\"Pods\", pods, podListTypeAlias)"
 
+func (c *podsClass) getList(ns string, listOptions kapi.ListOptions) (*kapi.PodList, error) {
+	return c.rk.clientset.Core().Pods(ns).List(listOptions)
+}
+
+//go:generate gotemplate "./templates/resource/list" "podsListModule(podsClass, \"Pods\", pods, podListTypeAlias)"
+
 func (c *podsClass) defineOwnMethods() {
+	c.defineListMethods()
 	c.rk.appendMethods(c.class, map[string]methodDefintion{
-		"get!": {
-			mruby.ArgsReq(0) | mruby.ArgsOpt(2), func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
-				vars, err := c.LookupVars(self)
-				if err != nil {
-					return nil, createException(m, err.Error())
-				}
-
-				ns, podNameRegexp, listOptions, err := c.rk.resourceArgs(m.GetArgs())
-				if err != nil {
-					return nil, createException(m, err.Error())
-				}
-
-				pods, err := c.rk.clientset.Core().Pods(c.rk.GetNamespace(ns)).List(*listOptions)
-				if err != nil {
-					return nil, createException(m, err.Error())
-				}
-
-				if podNameRegexp != nil {
-					for _, pod := range pods.Items {
-						if podNameRegexp.MatchString(pod.ObjectMeta.Name) {
-							vars.pods.Items = append(vars.pods.Items, pod)
-						}
-					}
-				} else {
-					vars.pods = podListTypeAlias(*pods)
-				}
-				return self, nil
-			},
-			instanceMethod,
-		},
-		"inspect": {
-			mruby.ArgsReq(0), func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
-				vars, err := c.LookupVars(self)
-				if err != nil {
-					return nil, createException(m, err.Error())
-				}
-
-				for n, pod := range vars.pods.Items {
-					fmt.Printf("%d: %s/%s\n", n, pod.ObjectMeta.Namespace, pod.ObjectMeta.Name)
-				}
-				return self, nil
-			},
-			instanceMethod,
-		},
 		"[]": {
 			mruby.ArgsReq(1), func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
 				var pod kapi.Pod
@@ -97,17 +59,6 @@ func (c *podsClass) defineOwnMethods() {
 				}
 				newPodObj.vars.pod = podTypeAlias(pod)
 				return newPodObj.self, nil
-			},
-			instanceMethod,
-		},
-		"count": {
-			mruby.ArgsReq(0), func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
-				vars, err := c.LookupVars(self)
-				if err != nil {
-					return nil, createException(m, err.Error())
-				}
-
-				return m.FixnumValue(len(vars.pods.Items)), nil
 			},
 			instanceMethod,
 		},
