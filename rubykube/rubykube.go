@@ -29,6 +29,7 @@ type Classes struct {
 	Root           *mruby.Class
 	Pods           *podsClass
 	Pod            *podClass
+	Services       *servicesClass
 	PodMaker       *podMakerClass
 	LabelSelector  *labelSelectorClass
 	LabelCollector *labelCollectorClass
@@ -99,6 +100,9 @@ func NewRubyKube(omitFuncs []string, rl *readline.Instance) (*RubyKube, error) {
 
 	rk.classes.Pod = newPodClass(rk)
 	rk.classes.Pod.defineOwnMethods()
+
+	rk.classes.Services = newServicesClass(rk)
+	rk.classes.Services.defineOwnMethods()
 
 	rk.classes.PodMaker = newPodMakerClass(rk)
 	rk.classes.PodMaker.defineOwnMethods()
