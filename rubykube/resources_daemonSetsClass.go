@@ -1,8 +1,6 @@
 package rubykube
 
 import (
-	"fmt"
-
 	mruby "github.com/mitchellh/go-mruby"
 	kapi "k8s.io/client-go/pkg/api/v1"
 	kext "k8s.io/client-go/pkg/apis/extensions/v1beta1"
@@ -16,8 +14,14 @@ func (c *daemonSetsClass) getList(ns string, listOptions kapi.ListOptions) (*kex
 	return c.rk.clientset.Extensions().DaemonSets(ns).List(listOptions)
 }
 
-func (c *daemonSetsClass) getItem(_ daemonSetListTypeAlias, _ int) (*podsClassInstance, error) {
-	return nil, fmt.Errorf("Not implemented!")
+func (c *daemonSetsClass) getItem(daemonSets daemonSetListTypeAlias, index int) (*daemonSetClassInstance, error) {
+	newDaemonSetObj, err := c.rk.classes.DaemonSet.New()
+	if err != nil {
+		return nil, err
+	}
+	daemonSet := daemonSets.Items[index]
+	newDaemonSetObj.vars.daemonSet = daemonSetTypeAlias(daemonSet)
+	return newDaemonSetObj, nil
 }
 
 //go:generate gotemplate "./templates/resource/list" "daemonSetsListModule(daemonSetsClass, \"DaemonSets\", daemonSets, daemonSetListTypeAlias)"

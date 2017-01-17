@@ -26,20 +26,29 @@ type RubyKube struct {
 }
 
 type Classes struct {
-	Root           *mruby.Class
-	Pods           *podsClass
-	Pod            *podClass
-	Service        *serviceClass
-	Services       *servicesClass
-	PodMaker       *podMakerClass
+	Root *mruby.Class
+
+	Pods *podsClass
+	Pod  *podClass
+
+	Service  *serviceClass
+	Services *servicesClass
+
+	ReplicaSets *replicaSetsClass
+	ReplicaSet  *replicaSetClass
+
+	DaemonSets *daemonSetsClass
+	DaemonSet  *daemonSetClass
+
+	PodMaker *podMakerClass
+
 	LabelSelector  *labelSelectorClass
 	LabelCollector *labelCollectorClass
 	LabelKey       *labelKeyClass
+
 	FieldSelector  *fieldSelectorClass
 	FieldCollector *fieldCollectorClass
 	FieldKey       *fieldKeyClass
-	ReplicaSets    *replicaSetsClass
-	DaemonSets     *daemonSetsClass
 }
 
 type CurrentState struct {
@@ -108,6 +117,18 @@ func NewRubyKube(omitFuncs []string, rl *readline.Instance) (*RubyKube, error) {
 	rk.classes.Service = newServiceClass(rk)
 	rk.classes.Service.defineOwnMethods()
 
+	rk.classes.ReplicaSets = newReplicaSetsClass(rk)
+	rk.classes.ReplicaSets.defineOwnMethods()
+
+	rk.classes.ReplicaSet = newReplicaSetClass(rk)
+	rk.classes.ReplicaSet.defineOwnMethods()
+
+	rk.classes.DaemonSets = newDaemonSetsClass(rk)
+	rk.classes.DaemonSets.defineOwnMethods()
+
+	rk.classes.DaemonSet = newDaemonSetClass(rk)
+	rk.classes.DaemonSet.defineOwnMethods()
+
 	rk.classes.PodMaker = newPodMakerClass(rk)
 	rk.classes.PodMaker.defineOwnMethods()
 
@@ -128,12 +149,6 @@ func NewRubyKube(omitFuncs []string, rl *readline.Instance) (*RubyKube, error) {
 
 	rk.classes.FieldKey = newFieldKeyClass(rk)
 	rk.classes.FieldKey.defineOwnMethods()
-
-	rk.classes.ReplicaSets = newReplicaSetsClass(rk)
-	rk.classes.ReplicaSets.defineOwnMethods()
-
-	rk.classes.DaemonSets = newDaemonSetsClass(rk)
-	rk.classes.DaemonSets.defineOwnMethods()
 
 	rk.SetNamespace("*")
 	if err := rk.applyPatches(); err != nil {
