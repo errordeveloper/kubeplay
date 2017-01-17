@@ -51,7 +51,6 @@ func (c *podsClass) defineOwnMethods() {
 				} else {
 					return nil, nil
 				}
-				//fmt.Printf("%d: %s/%s\n", n.Fixnum(), pod.ObjectMeta.Namespace, pod.ObjectMeta.Name)
 
 				newPodObj, err := c.rk.classes.Pod.New()
 				if err != nil {
