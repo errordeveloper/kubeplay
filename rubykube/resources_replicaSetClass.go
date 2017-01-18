@@ -15,8 +15,11 @@ func (c *replicaSetClass) getSignleton(ns, name string) (*kext.ReplicaSet, error
 
 //go:generate gotemplate "./templates/resource/singleton" "replicaSetSingletonModule(replicaSetClass, \"replicaSet\", replicaSet, replicaSetTypeAlias)"
 
+//go:generate gotemplate "./templates/resource/podfinder" "replicaSetPodFinderModule(replicaSetClass, \"replicaSet\", replicaSet, replicaSetTypeAlias)"
+
 func (c *replicaSetClass) defineOwnMethods() {
 	c.defineSingletonMethods()
+	c.definePodFinderMethods()
 }
 
 func (o *replicaSetClassInstance) Update() (mruby.Value, error) {

@@ -15,8 +15,11 @@ func (c *serviceClass) getSignleton(ns, name string) (*kapi.Service, error) {
 
 //go:generate gotemplate "./templates/resource/singleton" "serviceSignletonModule(serviceClass, \"Service\", service, serviceTypeAlias)"
 
+//go:generate gotemplate "./templates/resource/podfinder" "servicePodFinderModule(serviceClass, \"Service\", service, serviceTypeAlias)"
+
 func (c *serviceClass) defineOwnMethods() {
 	c.defineSingletonMethods()
+	c.definePodFinderMethods()
 }
 
 func (o *serviceClassInstance) Update() (mruby.Value, error) {

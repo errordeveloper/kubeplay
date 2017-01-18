@@ -15,8 +15,11 @@ func (c *daemonSetClass) getSignleton(ns, name string) (*kext.DaemonSet, error) 
 
 //go:generate gotemplate "./templates/resource/singleton" "daemonSetSingletonModule(daemonSetClass, \"daemonSet\", daemonSet, daemonSetTypeAlias)"
 
+//go:generate gotemplate "./templates/resource/podfinder" "daemonSetPodFinderModule(daemonSetClass, \"daemonSet\", daemonSet, daemonSetTypeAlias)"
+
 func (c *daemonSetClass) defineOwnMethods() {
 	c.defineSingletonMethods()
+	c.definePodFinderMethods()
 }
 
 func (o *daemonSetClassInstance) Update() (mruby.Value, error) {
