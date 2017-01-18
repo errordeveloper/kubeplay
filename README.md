@@ -29,7 +29,20 @@ kubeplay (namespace="*")> puts @pod.to_ruby # output the same as a Ruby hash
 kubeplay (namespace="*")> @pod.delete!
 ```
 
-All resources can be converted to a Ruby-native reprsentation, which means you can do things like this:
+## Resource Verbs
+
+Currently implemented verbs are the following:
+
+- `pods`
+- `services`
+- `replicasets`
+- `daemonsets`
+
+Each of these can be used with index operator, e.g. `services[10]`, as well as `first`, `last` and `any` methonds.
+Any resource object can be converted to a JSON string with `to_json` method, or a Ruby hashe with `to_ruby`.
+
+
+With a Ruby hash reprsentation you can do things like this:
 ```ruby
 @metadata = replicasets("*/").to_ruby.items.map do |k,v|
    v.metadata
@@ -42,8 +55,13 @@ end
 end
 ```
 
-By default commands operate on all namespaces, hence `(namespace="*")` is shown in the prompt.
-You can switch current namespaces with `namespace` command, e.g.
+You can define a verb aliases with `def_alias`, e.g. to create an `rs` verb alias for `replicasets` use
+```Ruby
+def_alias :rs, :replicasets
+```
+
+By default a verb operates on all namespaces, hence `(namespace="*")` is shown in the prompt.
+You can switch current namespaces with `namespace` verb, e.g.
 ```console
 kubeplay (namespace="*")> namespace "kube-system"
 kubeplay (namespace="kube-system")>
@@ -73,7 +91,6 @@ To get all pods begining with `bar-*` in all namespaces:
 
 ```console
 kubeplay (namespace="default")> pods "*/bar-*"
-
 ```
 
 > NOTE: `pods "*"` is the same as `pods`, and `pods "*/*"` is the same as `pods "*/"`.
