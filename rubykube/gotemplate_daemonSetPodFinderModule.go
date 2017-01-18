@@ -12,7 +12,7 @@ import (
 
 type daemonSetPodFinderModule struct{}
 
-func (c *daemonSetClass) defineControllerMethods() {
+func (c *daemonSetClass) definePodFinderMethods() {
 	c.rk.appendMethods(c.class, map[string]methodDefintion{
 		"pods": {
 			mruby.ArgsNone(), func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {

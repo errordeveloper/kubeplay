@@ -12,7 +12,7 @@ import (
 
 type replicaSetPodFinderModule struct{}
 
-func (c *replicaSetClass) defineControllerMethods() {
+func (c *replicaSetClass) definePodFinderMethods() {
 	c.rk.appendMethods(c.class, map[string]methodDefintion{
 		"pods": {
 			mruby.ArgsNone(), func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
