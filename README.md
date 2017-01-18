@@ -1,6 +1,6 @@
 # `kubeplay` – a new way to interact with Kubernetes
 
-## Usage: easy REPL with Ruby syntax
+## Usage example: easy REPL with Ruby syntax
 
 ```console
 > ./kubeplay
@@ -26,7 +26,7 @@ kubeplay (namespace="*")> puts @pod.to_json # output the pod definition in JSON
 }
 kubeplay (namespace="*")> puts @pod.to_ruby # output the same as a Ruby hash
 { ... }
-kubeplay (namespace="*")> @pod.delete!
+kubeplay (namespace="*")> @pod.delete! # I am a chaos monkey :)
 ```
 
 ## Resource Verbs
@@ -141,7 +141,7 @@ Currently this doesn't have special syntax and a string must be constructed, e.g
 pods fields: "status.phase!=Running", labels: -> { @tier =~ "backend" }
 ```
 
-## Usage: object generator with minimal input
+## Usage example: object generator with minimal input
 
 ```console
 > ./kubeplay -kubeconfig ~/.kube/config
