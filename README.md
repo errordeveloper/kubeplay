@@ -39,10 +39,9 @@ Currently implemented verbs are the following:
 - `daemonsets`
 
 Each of these can be used with index operator, e.g. `services[10]`, as well as `first`, `last` and `any` methonds.
-Any resource object can be converted to a JSON string with `to_json` method, or a Ruby hashe with `to_ruby`.
+Any resource object can be converted to a JSON string with `to_json` method, or a Ruby object with `to_ruby`.
 
-
-With a Ruby hash reprsentation you can do things like this:
+With a Ruby object reprsentation you can do things like this:
 ```ruby
 @metadata = replicasets("*/").to_ruby.items.map do |k,v|
    v.metadata
@@ -72,16 +71,15 @@ To go back to all-namespaces mode, use `namespace "*"`.
 
 A verb may take up two arguments in any order - a glob string and a block or hash.
 
-
 #### TL;DR
 
-Get all replica sets in `default` namespaces which have label `app` not matching `foo` or `bar` and label `version` matching `0.1` or `0.2`:
+To get all replica sets in `default` namespaces which have label `app` not matching `foo` or `bar` and label `version` matching `0.1` or `0.2` use
 
 ```ruby
 replicasets "default/", labels: -> { @app !~ %w(foo bar) ; @version =~ %w(0.1 0.2) ; }
 ```
 
-Get all running pods with label `app` matching `foo` or `bar`:
+To get all running pods with label `app` matching `foo` or `bar` use
 ```ruby
 pods { @app =~ %w(foo bar) ; status.phase == "Running" ; }
 ```
@@ -107,8 +105,6 @@ Get all pods in current namespace with name matching `*foo*`:
 pods "*foo*"
 ```
 
-Get all pods in 
-
 More specifically, this enables getting pods in a namespace other then current like this:
 ```console
 kubeplay (namespace="default")> pods "kube-system/foo-*"
@@ -118,11 +114,13 @@ Or, gettin pods with name matching `"bar-*` in all namespace like this:
 kubeplay (namespace="default")> pods "*/bar-*"
 ```
 
-> NOTE: if current namespace is `"*"`, `pods "*"` is the same as `pods`, and `pods "*/*"` is always the same as `pods "*/"`.
+> NOTE: if current namespace is `"*"`, `pods "*"` is the same as `pods`; `pods "*/*"` is always the same as `pods "*/"`.
 
-Another argument it takes is a block specifying label and field selectors using special syntax outlined below.
+#### Label & Field Selectors
 
-#### Label Selector Syntax
+Another argument a resource verb understand is a block specifying label and field selectors using special syntax outlined below.
+
+##### Label Selector Syntax
 
 To match a label agains a set of values, use `label("name") =~ %w(foo bar)`, or `!~`.
 
@@ -162,7 +160,7 @@ replicasets { @app !~ %w(foo bar); @version =~ %w(0.1 0.2); @tier =~ %w(frontend
 
 You can also use `make_label_selector` verb to construct these expressions and save those to variabels etc.
 
-#### Field Selector Syntax
+##### Field Selector Syntax
 
 This syntax is different, yet somewhat simpler.
 
@@ -187,8 +185,6 @@ You can also use compose selector expressions diretly as strings, if you prefer:
 ```ruby
 pods fields: "status.phase != Running", labels: "tier in (backend)"
 ```
-
-#### Using 
 
 ## Usage example: object generator with minimal input
 
