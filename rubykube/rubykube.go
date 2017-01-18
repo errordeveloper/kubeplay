@@ -247,6 +247,18 @@ func (rk *RubyKube) GetNamespace(override string) string {
 	return ns
 }
 
+func (rk *RubyKube) GetDefaultNamespace(override string) string {
+	ns := rk.state.Namespace
+	if override != "" {
+		ns = override
+	}
+
+	if ns == "*" {
+		return "default"
+	}
+	return ns
+}
+
 func (rk *RubyKube) resourceArgs(args []*mruby.MrbValue) (string, *regexp.Regexp, *kapi.ListOptions, error) {
 	var (
 		ns          string

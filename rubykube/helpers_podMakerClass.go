@@ -103,7 +103,10 @@ func (c *podMakerClass) defineOwnMethods() {
 				}
 
 				pod := kapi.Pod{
-					ObjectMeta: kapi.ObjectMeta{Labels: labels},
+					ObjectMeta: kapi.ObjectMeta{
+						Name:   name,
+						Labels: labels,
+					},
 					Spec: kapi.PodSpec{
 						Containers: []kapi.Container{container},
 					},
