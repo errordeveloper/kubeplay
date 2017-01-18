@@ -188,8 +188,8 @@ pods fields: "status.phase != Running", labels: "tier in (backend)"
 
 ```console
 > ./kubeplay -kubeconfig ~/.kube/config
-kubeplay (namespace="*")> make_pod(image: "errordeveloper/foo:latest").to_json
-kubeplay (namespace="*")> puts _
+kubeplay (namespace="*")> @pod = make_pod(image: "errordeveloper/foo:latest")
+kubeplay (namespace="*")> puts _.to_json
 {
   "metadata": {
     "creationTimestamp": null,
@@ -208,6 +208,8 @@ kubeplay (namespace="*")> puts _
   },
   "status": {}
 }
+kubeplay (namespace="*")> @pod.create!
+kubeplay (namespace="*")> @pod.delete!
 kubeplay (namespace="*")> ^D
 >
 ```
