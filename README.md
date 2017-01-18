@@ -86,9 +86,7 @@ pods { @app =~ %w(foo bar) ; status.phase == "Running" ; }
 
 #### Glob Expressions
 
-One of the arguments would be glob expression.
-
-Here are some examples of glob expressions.
+Here are some examples illustrating the types of glob expressions that `kubeplay` understands.
 
 Get all pods in `kube-systems` namespace:
 ```ruby
