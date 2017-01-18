@@ -119,7 +119,7 @@ And this
   label("baz").defined?
 }
 ```
-will compile a selector string `name noin (foo, bar),myapp`.
+will compile a selector string `name notin (foo, bar),myapp`.
 
 Some well-known labels have shortuct, e.g.
 ```ruby
@@ -136,9 +136,9 @@ replicasets labels: -> { @app !~ %w(foo bar); @version =~ %w(0.1 0.2); @tier =~ 
 ```
 
 Another allowed key for the hash argument of `pods` verb is `:fields`, which can be used to match resource fields.
-Currently this doesn't have special syntax and a string must be constructed, e.g.
+Field selectors also have special syntax, e.g.:
 ```ruby
-pods fields: "status.phase!=Running", labels: -> { @tier =~ "backend" }
+pods fields: -> { status.phase != :Running }, labels: -> { @tier =~ "backend" }
 ```
 
 ## Usage example: object generator with minimal input
