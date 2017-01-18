@@ -68,36 +68,61 @@ kubeplay (namespace="kube-system")>
 ```
 To go back to all-namespaces mode, use `namespace "*"`.
 
-The `pods` verb may take up two arguments in any order, a glob expressions, e.g.
-```console
-kubeplay (namespace="*")> pods "kube-system/"
-```
-where you can use `"*/"` to look at pods in all namespace.
+### Resource Arguments
 
-For example, you can get all pods in a namespace other then current like this:
-```console
-kubeplay (namespace="default")> pods "kube-system/"
-```
-Or, you can get pods in all namespace like this:
-```console
-kubeplay (namespace="default")> pods "*/"
+A verb may take up two arguments in any order - a glob string and a block or hash.
+
+
+#### TL;DR
+
+Get all replica sets in `default` namespaces which have label `app` not matching `foo` or `bar` and label `version` matching `0.1` or `0.2`:
+
+```ruby
+replicasets "default/", labels: -> { @app !~ %w(foo bar) ; @version =~ %w(0.1 0.2) ; }
 ```
 
-To get all pods containing `foo` in current namespace:
-```console
-kubeplay (namespace="default")> pods "*foo*"
+Get all running pods with label `app` matching `foo` or `bar`:
+```ruby
+pods { @app =~ %w(foo bar) ; status.phase == "Running" ; }
 ```
-To get all pods begining with `bar-*` in all namespaces:
 
+#### Glob Expressions
+
+One of the arguments would be glob expression.
+
+Here are some examples of glob expressions.
+
+Get all pods in `kube-systems` namespace:
+```ruby
+pods "kube-system/"
+```
+
+Get all pods in all namespace:
+```ruby
+pods "*/"
+```
+
+Get all pods in current namespace with name matching `*foo*`:
+```ruby
+pods "*foo*"
+```
+
+Get all pods in 
+
+More specifically, this enables getting pods in a namespace other then current like this:
+```console
+kubeplay (namespace="default")> pods "kube-system/foo-*"
+```
+Or, gettin pods with name matching `"bar-*` in all namespace like this:
 ```console
 kubeplay (namespace="default")> pods "*/bar-*"
 ```
 
-> NOTE: `pods "*"` is the same as `pods`, and `pods "*/*"` is the same as `pods "*/"`.
+> NOTE: if current namespace is `"*"`, `pods "*"` is the same as `pods`, and `pods "*/*"` is always the same as `pods "*/"`.
 
-Another arument it takes is a hash, where keys `:labels` and `:fields` are recognised.
+Another argument it takes is a block specifying label and field selectors using special syntax outlined below.
 
-The `:labels` can be passed in as a string or as a block with special syntax described bellow.
+#### Label Selector Syntax
 
 To match a label agains a set of values, use `label("name") =~ %w(foo bar)`, or `!~`.
 
@@ -130,16 +155,40 @@ Some well-known labels have shortuct, e.g.
 }
 ```
 
-You can use `make_label_selector` verb to construct these expressions, or simply pass a lambda like this:
+Simply pass a block like this:
 ```ruby
-replicasets labels: -> { @app !~ %w(foo bar); @version =~ %w(0.1 0.2); @tier =~ %w(frontend backend); }
+replicasets { @app !~ %w(foo bar); @version =~ %w(0.1 0.2); @tier =~ %w(frontend backend); }
 ```
 
-Another allowed key for the hash argument of `pods` verb is `:fields`, which can be used to match resource fields.
-Field selectors also have special syntax, e.g.:
+You can also use `make_label_selector` verb to construct these expressions and save those to variabels etc.
+
+#### Field Selector Syntax
+
+This syntax is different, yet somewhat simpler.
+
+Here is a selector mathing all running pods:
+```ruby
+{ status.phase != :Running }
+```
+
+#### Using Slectors
+
+To get all running pods with label `tier` mathcing `backend`:
+```ruby
+pods { status.phase != :Running ; @tier =~ "backend" ; }
+```
+
+Alternatively, if you prefer to be more explicit, you can use a hash:
 ```ruby
 pods fields: -> { status.phase != :Running }, labels: -> { @tier =~ "backend" }
 ```
+
+You can also use compose selector expressions diretly as strings, if you prefer:
+```ruby
+pods fields: "status.phase != Running", labels: "tier in (backend)"
+```
+
+#### Using 
 
 ## Usage example: object generator with minimal input
 
