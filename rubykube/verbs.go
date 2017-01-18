@@ -18,17 +18,22 @@ type verbDefinition struct {
 }
 
 // verbJumpTable is the dispatch instructions sent to the builder at preparation time.
-var verbJumpTable = map[string]verbDefinition{
-	"pods":                {pods, mruby.ArgsReq(0) | mruby.ArgsOpt(2)},
-	"services":            {services, mruby.ArgsReq(0) | mruby.ArgsOpt(2)},
-	"replicasets":         {replicaSets, mruby.ArgsReq(0) | mruby.ArgsOpt(2)},
-	"daemonsets":          {daemonSets, mruby.ArgsReq(0) | mruby.ArgsOpt(2)},
-	"make_pod":            {makePod, mruby.ArgsReq(1)},
-	"make_label_selector": {makeLabelSelector, mruby.ArgsReq(1)},
-	"make_field_selector": {makeFieldSelector, mruby.ArgsReq(1)},
-	"using":               {using, mruby.ArgsReq(0) | mruby.ArgsOpt(2)},
-	"namespace":           {namespace, mruby.ArgsReq(0) | mruby.ArgsOpt(2)},
-	"def_alias":           {defAlias, mruby.ArgsReq(2)},
+var verbJumpTable map[string]verbDefinition
+
+func init() {
+	// This is to avoid initialisation loop error from the compiler
+	verbJumpTable = map[string]verbDefinition{
+		"pods":                {pods, mruby.ArgsReq(0) | mruby.ArgsOpt(2)},
+		"services":            {services, mruby.ArgsReq(0) | mruby.ArgsOpt(2)},
+		"replicasets":         {replicaSets, mruby.ArgsReq(0) | mruby.ArgsOpt(2)},
+		"daemonsets":          {daemonSets, mruby.ArgsReq(0) | mruby.ArgsOpt(2)},
+		"make_pod":            {makePod, mruby.ArgsReq(1)},
+		"make_label_selector": {makeLabelSelector, mruby.ArgsReq(1)},
+		"make_field_selector": {makeFieldSelector, mruby.ArgsReq(1)},
+		"using":               {using, mruby.ArgsReq(0) | mruby.ArgsOpt(2)},
+		"namespace":           {namespace, mruby.ArgsReq(0) | mruby.ArgsOpt(2)},
+		"def_alias":           {defAlias, mruby.ArgsReq(2)},
+	}
 }
 
 type verbFunc func(rk *RubyKube, args []*mruby.MrbValue, m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value)
@@ -212,15 +217,22 @@ func defAlias(rk *RubyKube, args []*mruby.MrbValue, m *mruby.Mrb, self *mruby.Mr
 		return nil, createException(m, "Both arguments must be symbols")
 	}
 
+	alias := args[0].String()
+	verb := args[1].String()
+
+	if _, ok := verbJumpTable[verb]; !ok {
+		return nil, createException(m, fmt.Sprintf("Unknown verb %q", verb))
+	}
+
 	aliasFunc := func(m *mruby.Mrb, _ *mruby.MrbValue) (mruby.Value, mruby.Value) {
-		value, err := self.Call(args[1].String(), toValues(m.GetArgs())...)
+		value, err := self.Call(verb, toValues(m.GetArgs())...)
 		if err != nil {
 			return nil, createException(m, err.Error())
 		}
 		return value, nil
 	}
 
-	rk.mrb.TopSelf().SingletonClass().DefineMethod(args[0].String(), aliasFunc, mruby.ArgsAny())
+	rk.mrb.TopSelf().SingletonClass().DefineMethod(alias, aliasFunc, mruby.ArgsAny())
 
 	return nil, nil
 }
