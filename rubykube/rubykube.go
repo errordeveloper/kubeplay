@@ -278,8 +278,7 @@ func (rk *RubyKube) resourceArgs(args []*mruby.MrbValue) (string, *regexp.Regexp
 			namespacePrefix,
 			validName))
 
-	// pods "*/bar-*"
-	// pods "foo/bar-*"
+	// TODO pods "*-foo-*-bar-*"
 
 	hasNameGlob := false
 	hasSelectors := false
