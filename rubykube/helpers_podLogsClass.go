@@ -105,7 +105,7 @@ func (c *podLogsClass) defineOwnMethods() {
 					}
 				}
 
-				for name, logBuffer := range vars.logs {
+				grep := func(name string, logBuffer *bytes.Buffer) error {
 					scanner := bufio.NewScanner(logBuffer)
 					for scanner.Scan() {
 						line := scanner.Text()
@@ -117,6 +117,12 @@ func (c *podLogsClass) defineOwnMethods() {
 					}
 
 					if err := scanner.Err(); err != nil {
+						return err
+					}
+				}
+
+				for name, logBuffer := range vars.logs {
+					if err := grep(name, logBuffer); err != nil {
 						return nil, createException(m, err.Error())
 					}
 				}
