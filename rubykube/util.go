@@ -289,3 +289,11 @@ func call(self *mruby.MrbValue, method string, args ...*mruby.MrbValue) (mruby.V
 	}
 	return v, nil
 }
+
+func callWithException(m *mruby.Mrb, self *mruby.MrbValue, method string, args ...*mruby.MrbValue) (mruby.Value, mruby.Value) {
+	v, err := call(self, method, args...)
+	if err != nil {
+		return nil, createException(m, err.Error())
+	}
+	return v, nil
+}

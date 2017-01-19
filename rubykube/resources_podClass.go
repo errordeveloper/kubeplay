@@ -1,10 +1,6 @@
 package rubykube
 
 import (
-	_ "fmt"
-	"io"
-	"os"
-
 	mruby "github.com/mitchellh/go-mruby"
 	kapi "k8s.io/client-go/pkg/api/v1"
 )
@@ -64,19 +60,13 @@ func (c *podClass) defineOwnMethods() {
 					return nil, createException(m, err.Error())
 				}
 
-				logs, err := c.rk.clientset.Core().Pods(vars.pod.ObjectMeta.Namespace).GetLogs(vars.pod.ObjectMeta.Name, &kapi.PodLogOptions{}).Stream()
+				newPodLogsObj, err := c.rk.classes.PodLogs.New()
 				if err != nil {
 					return nil, createException(m, err.Error())
 				}
-				defer logs.Close()
-
-				_, err = io.Copy(os.Stdout, logs)
-				if err != nil {
-					return nil, createException(m, err.Error())
-				}
-
-				return nil, nil
-
+				pod := kapi.Pod(vars.pod)
+				newPodLogsObj.vars.pod = &pod
+				return callWithException(m, newPodLogsObj.self, "get!")
 			},
 			instanceMethod,
 		},

@@ -40,6 +40,8 @@ type Classes struct {
 	DaemonSets *daemonSetsClass
 	DaemonSet  *daemonSetClass
 
+	PodLogs *podLogsClass
+
 	PodMaker *podMakerClass
 
 	LabelSelector  *labelSelectorClass
@@ -128,6 +130,9 @@ func NewRubyKube(omitFuncs []string, rl *readline.Instance) (*RubyKube, error) {
 
 	rk.classes.DaemonSet = newDaemonSetClass(rk)
 	rk.classes.DaemonSet.defineOwnMethods()
+
+	rk.classes.PodLogs = newPodLogsClass(rk)
+	rk.classes.PodLogs.defineOwnMethods()
 
 	rk.classes.PodMaker = newPodMakerClass(rk)
 	rk.classes.PodMaker.defineOwnMethods()
