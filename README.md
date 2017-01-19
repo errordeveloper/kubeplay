@@ -188,6 +188,14 @@ You can also use compose selector expressions diretly as strings, if you prefer:
 pods fields: "status.phase != Running", labels: "tier in (backend)"
 ```
 
+### Inspecting the Logs
+
+To get grep logs for any pod matching given selector
+
+```ruby
+pods{ @name =~ "launch-generator" ; }.any.logs.grep ".*INFO:.*", ".*user-agent:.*"
+```
+
 ## Usage example: object generator with minimal input
 
 ```console
@@ -214,6 +222,7 @@ kubeplay (namespace="*")> puts _.to_json
 }
 kubeplay (namespace="*")> @pod.create!
 kubeplay (namespace="*")> @pod.delete!
+
 kubeplay (namespace="*")> ^D
 >
 ```
@@ -223,7 +232,7 @@ kubeplay (namespace="*")> ^D
 - [x] `pod.delete!`
 - [x] `pod.create!`
 - [x] `pod.logs`
-- [ ] `pod.logs.grep`
+- [x] `pod.logs.grep`
 - [ ] `pod.logs.pager` and `pod.logs.grep.pager`
 - [ ] grep logs in any set of resources
 - [ ] more fluent behaviour of set resources, e.g. `replicasets.pods` and not `replicasets.any.pods`
