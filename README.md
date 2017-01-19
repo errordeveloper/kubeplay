@@ -216,7 +216,7 @@ kubeplay (namespace="*")> ^D
 >
 ```
 
-### TODO
+### TODOs
 
 - [x] `pod.delete!`
 - [x] `pod.create!`
