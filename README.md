@@ -1,5 +1,7 @@
 # `kubeplay` – a new way to interact with Kubernetes
 
+> NOTE: this project is still in an early stage, if you like it, please checkout [TODOs](#TODOs) and open an issue if you'd like to contribute or discuss anything in particular.
+
 ## Usage example: easy REPL with Ruby syntax
 
 ```console
@@ -213,6 +215,27 @@ kubeplay (namespace="*")> @pod.delete!
 kubeplay (namespace="*")> ^D
 >
 ```
+
+### TODO
+
+- [x] `pod.delete!`
+- [x] `pod.create!`
+- [x] `pod.logs`
+- [ ] `pod.logs.grep`
+- [ ] `pod.logs.pager` and `pod.logs.grep.pager`
+- [ ] grep logs in any set of resources
+- [ ] more fluent behaviour of set resources, e.g. `replicasets.pods` and``replicasets.pods`
+- [ ] way to run scripts and not just REPL
+- [ ] extend resource generator functionality
+  - [ ] `ReplicaSet`+`Service`
+  - [ ] `Kubefile` DSL
+- [ ] other ideas
+  - [ ] simple controller loop framework
+  - [ ] multi-cluster support
+  - [ ] resource diff
+  - [ ] network policy tester framework
+  - [ ] eval/exec code in a pod
+  - [ ] test framework for apps, e.g. "Here is my app, it has a configmap and a secrete, and I want to test if it works"
 
 ### Building
 
