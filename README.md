@@ -226,7 +226,8 @@ kubeplay (namespace="*")> ^D
 - [ ] `pod.logs.grep`
 - [ ] `pod.logs.pager` and `pod.logs.grep.pager`
 - [ ] grep logs in any set of resources
-- [ ] more fluent behaviour of set resources, e.g. `replicasets.pods` and``replicasets.pods`
+- [ ] more fluent behaviour of set resources, e.g. `replicasets.pods` and not `replicasets.any.pods`
+- [ ] reverse lookup, e.g. given `@rs = replicasets.any`, `@rs.pods.any.owner` should be the same as `@rs`
 - [ ] way to run scripts and not just REPL
 - [ ] extend resource generator functionality
   - [ ] `ReplicaSet`+`Service`
