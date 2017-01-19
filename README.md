@@ -1,6 +1,8 @@
 # `kubeplay` – a new way to interact with Kubernetes
 
-> NOTE: this project is still in an early stage, if you like it, please checkout [TODOs](#todos) and open an issue if you'd like to contribute or discuss anything in particular.
+> NOTE: _this project is still in an early stage_
+
+> If you like this project, please checkout [TODOs](#todos) and open an issue if you'd like to contribute or discuss anything in particular.
 
 ## Usage example: easy REPL with Ruby syntax
 
