@@ -12,12 +12,12 @@ import (
 )
 
 type podLogsClassInstanceVars struct {
-	logBuffer bytes.Buffer
-	pod       *kapi.Pod
+	pods []kapi.Pod
+	logs map[string]*bytes.Buffer
 }
 
 func newPodLogsClassInstanceVars(c *podLogsClass, s *mruby.MrbValue, args ...mruby.Value) (*podLogsClassInstanceVars, error) {
-	return &podLogsClassInstanceVars{}, nil
+	return &podLogsClassInstanceVars{logs: make(map[string]*bytes.Buffer)}, nil
 }
 
 //go:generate gotemplate "./templates/basic" "podLogsClass(\"PodLogs\", newPodLogsClassInstanceVars, podLogsClassInstanceVars)"
@@ -31,12 +31,20 @@ func (c *podLogsClass) defineOwnMethods() {
 					return nil, createException(m, err.Error())
 				}
 
-				stream, err := c.rk.clientset.Core().Pods(vars.pod.ObjectMeta.Namespace).GetLogs(vars.pod.ObjectMeta.Name, &kapi.PodLogOptions{}).Stream()
-				if err != nil {
-					return nil, createException(m, err.Error())
+				for _, pod := range vars.pods {
+					logBuffer := bytes.Buffer{}
+
+					for _, container := range pod.Spec.Containers {
+						name := fmt.Sprintf("%s/%s:%s", pod.ObjectMeta.Namespace, pod.ObjectMeta.Name, container.Name)
+						stream, err := c.rk.clientset.Core().Pods(pod.ObjectMeta.Namespace).GetLogs(pod.ObjectMeta.Name, &kapi.PodLogOptions{Container: container.Name}).Stream()
+						if err != nil {
+							return nil, createException(m, err.Error())
+						}
+						defer stream.Close()
+						io.Copy(&logBuffer, stream)
+						vars.logs[name] = &logBuffer
+					}
 				}
-				defer stream.Close()
-				io.Copy(&vars.logBuffer, stream)
 				return self, nil
 			},
 			instanceMethod,
@@ -59,14 +67,15 @@ func (c *podLogsClass) defineOwnMethods() {
 					return nil, createException(m, err.Error())
 				}
 
-				scanner := bufio.NewScanner(&vars.logBuffer)
-				for scanner.Scan() {
-					fmt.Println(scanner.Text())
+				for name, logBuffer := range vars.logs {
+					scanner := bufio.NewScanner(logBuffer)
+					for scanner.Scan() {
+						fmt.Printf("[%s] %s\n", name, scanner.Text())
+					}
+					if err := scanner.Err(); err != nil {
+						return nil, createException(m, err.Error())
+					}
 				}
-				if err := scanner.Err(); err != nil {
-					return nil, createException(m, err.Error())
-				}
-				fmt.Println(vars.logBuffer.Len())
 
 				return self, nil
 			},
@@ -96,22 +105,21 @@ func (c *podLogsClass) defineOwnMethods() {
 					}
 				}
 
-				commonPrefix := fmt.Sprintf("%s/%s", vars.pod.ObjectMeta.Namespace, vars.pod.ObjectMeta.Name)
-
-				scanner := bufio.NewScanner(&vars.logBuffer)
-				for scanner.Scan() {
-					line := scanner.Text()
-					for _, re := range matchAgainst {
-						if re.MatchString(line) {
-							fmt.Printf("[%s] %s\n", commonPrefix, line)
+				for name, logBuffer := range vars.logs {
+					scanner := bufio.NewScanner(logBuffer)
+					for scanner.Scan() {
+						line := scanner.Text()
+						for _, re := range matchAgainst {
+							if re.MatchString(line) {
+								fmt.Printf("[%s] %s\n", name, line)
+							}
 						}
 					}
-				}
 
-				if err := scanner.Err(); err != nil {
-					return nil, createException(m, err.Error())
+					if err := scanner.Err(); err != nil {
+						return nil, createException(m, err.Error())
+					}
 				}
-				fmt.Println(vars.logBuffer.Len())
 
 				return self, nil
 			},

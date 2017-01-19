@@ -231,8 +231,8 @@ kubeplay (namespace="*")> ^D
 
 - [x] `pod.delete!`
 - [x] `pod.create!`
-- [x] `pod.logs`
-- [x] `pod.logs.grep`
+- [x] `pod.logs` & `pod.logs.grep`
+- [x] `pods.logs` & `pods.logs.grep`
 - [ ] `pod.logs.pager` and `pod.logs.grep.pager`
 - [ ] grep logs in any set of resources
 - [ ] more fluent behaviour of set resources, e.g. `replicasets.pods` and not `replicasets.any.pods`

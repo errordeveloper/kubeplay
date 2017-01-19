@@ -27,6 +27,24 @@ func (c *podsClass) getItem(pods podListTypeAlias, index int) (*podClassInstance
 
 func (c *podsClass) defineOwnMethods() {
 	c.defineListMethods()
+	c.rk.appendMethods(c.class, map[string]methodDefintion{
+		"logs": {
+			mruby.ArgsNone(), func(m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
+				vars, err := c.LookupVars(self)
+				if err != nil {
+					return nil, createException(m, err.Error())
+				}
+
+				newPodLogsObj, err := c.rk.classes.PodLogs.New()
+				if err != nil {
+					return nil, createException(m, err.Error())
+				}
+				newPodLogsObj.vars.pods = vars.pods.Items
+				return callWithException(m, newPodLogsObj.self, "get!")
+			},
+			instanceMethod,
+		},
+	})
 }
 
 func (o *podsClassInstance) Update(args ...*mruby.MrbValue) (mruby.Value, error) {

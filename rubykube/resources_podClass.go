@@ -65,7 +65,7 @@ func (c *podClass) defineOwnMethods() {
 					return nil, createException(m, err.Error())
 				}
 				pod := kapi.Pod(vars.pod)
-				newPodLogsObj.vars.pod = &pod
+				newPodLogsObj.vars.pods = []kapi.Pod{pod}
 				return callWithException(m, newPodLogsObj.self, "get!")
 			},
 			instanceMethod,
