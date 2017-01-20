@@ -243,13 +243,15 @@ Here are some TODO items and ideas.
 - [ ] extend resource generator functionality
   - [ ] `ReplicaSet`+`Service`
   - [ ] `Kubefile` DSL
-- [ ] other ideas
-  - [ ] simple framework for controllers and 3rd-party resource (e.g. chaos monkey of sorts, or use terraform to create an exteranl resource and store URL in a secret, custom policy controller made easy)
-  - [ ] multi-cluster support
-  - [ ] resource diff
-  - [ ] network policy tester framework
-  - [ ] eval/exec code in a pod
-  - [ ] test framework for apps, e.g. "Here is my app, it has a configmap and a secrete, and I want to test if it works"
+
+#### Ideas
+
+  - simple framework for controllers and 3rd-party resource (e.g. chaos monkey of sorts, or use terraform to create an exteranl resource and store URL in a secret, custom policy controller made easy)
+  - multi-cluster support
+  - resource diff
+  - network policy tester framework
+  - eval/exec code in a pod
+  - test framework for apps, e.g. "Here is my app, it has a configmap and a secrete, and I want to test if it works"
 
 ### Building
 
