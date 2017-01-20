@@ -229,6 +229,8 @@ kubeplay (namespace="*")> ^D
 
 ### TODOs
 
+Here are some TODO items and ideas.
+
 - [x] `pod.delete!`
 - [x] `pod.create!`
 - [x] `pod.logs` & `pod.logs.grep`
@@ -242,7 +244,7 @@ kubeplay (namespace="*")> ^D
   - [ ] `ReplicaSet`+`Service`
   - [ ] `Kubefile` DSL
 - [ ] other ideas
-  - [ ] simple controller loop framework
+  - [ ] simple framework for controllers and 3rd-party resource (e.g. chaos monkey of sorts, or use terraform to create an exteranl resource and store URL in a secret, custom policy controller made easy)
   - [ ] multi-cluster support
   - [ ] resource diff
   - [ ] network policy tester framework
