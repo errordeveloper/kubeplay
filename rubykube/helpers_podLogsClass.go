@@ -119,6 +119,7 @@ func (c *podLogsClass) defineOwnMethods() {
 					if err := scanner.Err(); err != nil {
 						return err
 					}
+					return nil
 				}
 
 				for name, logBuffer := range vars.logs {
