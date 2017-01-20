@@ -77,6 +77,8 @@ func NewRubyKube(omitFuncs []string, rl *readline.Instance) (*RubyKube, error) {
 		panic(fmt.Errorf("clientcmd.BuildConfigFromFlags: %v", err))
 	}
 
+	fmt.Printf("kubeconfig=%+v\n", config)
+
 	rk := &RubyKube{mrb: mruby.NewMrb(), readline: rl, state: &CurrentState{}}
 
 	rk.mrb.DisableGC()
