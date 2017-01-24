@@ -10,32 +10,33 @@ import (
 	kext "k8s.io/client-go/pkg/apis/extensions/v1beta1"
 )
 
-type AppServiceOpts struct {
+type AppComponentOpts struct {
 	PrometheusPath string
 	StandardProbes bool
 	OnlyDeployment bool
 }
 
-type AppService struct {
+type AppComponent struct {
 	Image    string
 	Name     string
 	Port     int
-	Opts     AppServiceOpts
+	Replicas int32
+	Opts     AppComponentOpts
 	Env      map[string]string
 	Override interface{}
 }
 
-type AppServiceBuildOpts struct {
+type AppComponentBuildOpts struct {
 	Namespace string
 }
 
 type App struct {
-	Name     string
-	Services []AppService
+	Name  string
+	Group []AppComponent
 }
 
 // TODO figure out how to use kapi.List here, if we can
-type AppServiceResourcePair struct {
+type AppComponentResourcePair struct {
 	Deployment *kext.Deployment
 	Service    *kapi.Service
 }
@@ -44,14 +45,14 @@ const (
 	DEFAULT_REPLICAS = 1
 )
 
-func (app *AppService) GetNameAndLabels() (string, map[string]string) {
+func (i *AppComponent) GetNameAndLabels() (string, map[string]string) {
 	var name string
 
-	imageParts := strings.Split(strings.Split(app.Image, ":")[0], "/")
+	imageParts := strings.Split(strings.Split(i.Image, ":")[0], "/")
 	name = imageParts[len(imageParts)-1]
 
-	if app.Name != "" {
-		name = app.Name
+	if i.Name != "" {
+		name = i.Name
 	}
 
 	labels := map[string]string{"name": name}
@@ -59,9 +60,17 @@ func (app *AppService) GetNameAndLabels() (string, map[string]string) {
 	return name, labels
 }
 
-func (app *AppService) BuildPod(opts AppServiceBuildOpts) *kapi.PodTemplateSpec {
-	name, labels := app.GetNameAndLabels()
-	container := kapi.Container{Name: name, Image: app.Image}
+func (i *AppComponent) GetMeta() kapi.ObjectMeta {
+	name, labels := i.GetNameAndLabels()
+	return kapi.ObjectMeta{
+		Name:   name,
+		Labels: labels,
+	}
+}
+
+func (i *AppComponent) BuildPod(opts AppComponentBuildOpts) *kapi.PodTemplateSpec {
+	name, labels := i.GetNameAndLabels()
+	container := kapi.Container{Name: name, Image: i.Image}
 
 	pod := kapi.PodTemplateSpec{
 		ObjectMeta: kapi.ObjectMeta{
@@ -75,14 +84,18 @@ func (app *AppService) BuildPod(opts AppServiceBuildOpts) *kapi.PodTemplateSpec 
 	return &pod
 }
 
-func (app *AppService) BuildDeployment(opts AppServiceBuildOpts, pod *kapi.PodTemplateSpec) *kext.Deployment {
+func (i *AppComponent) BuildDeployment(opts AppComponentBuildOpts, pod *kapi.PodTemplateSpec) *kext.Deployment {
 	if pod == nil {
 		return nil
 	}
 
 	replicas := int32(DEFAULT_REPLICAS)
 
-	name, labels := app.GetNameAndLabels()
+	if i.Replicas != nil {
+		replicas = i.Replicas
+	}
+
+	name, labels := i.GetNameAndLabels()
 	deploymentSpec := kext.DeploymentSpec{
 		Replicas: &replicas,
 		Selector: &meta.LabelSelector{MatchLabels: labels},
@@ -90,11 +103,8 @@ func (app *AppService) BuildDeployment(opts AppServiceBuildOpts, pod *kapi.PodTe
 	}
 
 	deployment := &kext.Deployment{
-		ObjectMeta: kapi.ObjectMeta{
-			Name:   name,
-			Labels: labels,
-		},
-		Spec: deploymentSpec,
+		ObjectMeta: i.GetMeta(),
+		Spec:       deploymentSpec,
 	}
 
 	if opts.Namespace != "" {
@@ -104,24 +114,28 @@ func (app *AppService) BuildDeployment(opts AppServiceBuildOpts, pod *kapi.PodTe
 	return deployment
 }
 
-func (app *AppService) BuildService(opts AppServiceBuildOpts) *kapi.Service {
+func (i *AppComponent) BuildService(opts AppComponentBuildOpts) *kapi.Service {
+
+	service := &kapi.Service{
+		ObjectMeta: i.GetMeta(),
+	}
 	return nil
 }
 
-func (app *AppService) Build(opts AppServiceBuildOpts) AppServiceResourcePair {
-	pod := app.BuildPod(opts)
+func (i *AppComponent) Build(opts AppComponentBuildOpts) AppComponentResourcePair {
+	pod := i.BuildPod(opts)
 
-	return AppServiceResourcePair{
-		app.BuildDeployment(opts, pod),
-		app.BuildService(opts),
+	return AppComponentResourcePair{
+		i.BuildDeployment(opts, pod),
+		i.BuildService(opts),
 	}
 }
 
-func (app *App) Build() []AppServiceResourcePair {
-	opts := AppServiceBuildOpts{Namespace: app.Name}
-	list := []AppServiceResourcePair{}
+func (i *App) Build() []AppComponentResourcePair {
+	opts := AppComponentBuildOpts{Namespace: i.Name}
+	list := []AppComponentResourcePair{}
 
-	for _, service := range app.Services {
+	for _, service := range i.Components {
 		list = append(list, service.Build(opts))
 	}
 
@@ -129,12 +143,12 @@ func (app *App) Build() []AppServiceResourcePair {
 }
 
 func main() {
-	altPromPath := AppServiceOpts{PrometheusPath: "/prometheus"}
-	noStandardProbes := AppServiceOpts{StandardProbes: false}
+	altPromPath := AppComponentOpts{PrometheusPath: "/prometheus"}
+	noStandardProbes := AppComponentOpts{StandardProbes: false}
 
 	app := App{
 		Name: "sock-shop",
-		Services: []AppService{
+		Services: []AppComponent{
 			{
 				Image: "weaveworksdemos/cart:0.4.0",
 				Opts:  altPromPath,
