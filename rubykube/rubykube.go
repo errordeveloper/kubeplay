@@ -12,6 +12,7 @@ import (
 
 	"k8s.io/client-go/kubernetes"
 	kapi "k8s.io/client-go/pkg/api/v1"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
@@ -66,6 +67,10 @@ func keep(omitFuncs []string, name string) bool {
 		}
 	}
 	return true
+}
+
+func newClientConfig(overrides *clientcmd.ConfigOverrides) (*rest.Config, error) {
+	return NewNonInteractiveDeferredLoadingClientConfig(&ClientConfigLoadingRules{ExplicitPath: *kubeconfig}, overrides).ClientConfig()
 }
 
 // NewRubyKube may return an error on mruby or k8s.io/client-go issues.
