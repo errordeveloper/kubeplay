@@ -9,6 +9,7 @@ import:
 - package: github.com/mitchellh/go-mruby
   #repo: https://github.com/erikh/go-mruby
   #version: c474c62
+#- package: k8s.io/apimachinery
 - package: k8s.io/client-go
   version: ^2.0.0-alpha.1
   subpackages:

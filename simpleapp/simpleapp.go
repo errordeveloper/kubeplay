@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"strings"
 
+	meta "k8s.io/client-go/pkg/api/unversioned" // Should eventually migrate to "k8s.io/apimachinery/pkg/apis/meta/v1"?
 	kapi "k8s.io/client-go/pkg/api/v1"
+	kext "k8s.io/client-go/pkg/apis/extensions/v1beta1"
 )
 
 type AppServiceOpts struct {
@@ -32,11 +34,19 @@ type App struct {
 	Services []AppService
 }
 
-func (app *AppService) Build(opts AppServiceBuildOpts) *kapi.Pod {
-	container := kapi.Container{}
+// TODO figure out how to use kapi.List here, if we can
+type AppServiceResourcePair struct {
+	Deployment *kext.Deployment
+	Service    *kapi.Service
+}
+
+const (
+	DEFAULT_REPLICAS = 1
+)
+
+func (app *AppService) GetNameAndLabels() (string, map[string]string) {
 	var name string
 
-	container.Image = app.Image
 	imageParts := strings.Split(strings.Split(app.Image, ":")[0], "/")
 	name = imageParts[len(imageParts)-1]
 
@@ -44,12 +54,17 @@ func (app *AppService) Build(opts AppServiceBuildOpts) *kapi.Pod {
 		name = app.Name
 	}
 
-	container.Name = name
 	labels := map[string]string{"name": name}
 
-	pod := kapi.Pod{
+	return name, labels
+}
+
+func (app *AppService) BuildPod(opts AppServiceBuildOpts) *kapi.PodTemplateSpec {
+	name, labels := app.GetNameAndLabels()
+	container := kapi.Container{Name: name, Image: app.Image}
+
+	pod := kapi.PodTemplateSpec{
 		ObjectMeta: kapi.ObjectMeta{
-			Name:   name,
 			Labels: labels,
 		},
 		Spec: kapi.PodSpec{
@@ -57,19 +72,57 @@ func (app *AppService) Build(opts AppServiceBuildOpts) *kapi.Pod {
 		},
 	}
 
-	if opts.Namespace != "" {
-		pod.ObjectMeta.Namespace = opts.Namespace
-	}
-
 	return &pod
 }
 
-func (app *App) Build() *kapi.PodList {
+func (app *AppService) BuildDeployment(opts AppServiceBuildOpts, pod *kapi.PodTemplateSpec) *kext.Deployment {
+	if pod == nil {
+		return nil
+	}
+
+	replicas := int32(DEFAULT_REPLICAS)
+
+	name, labels := app.GetNameAndLabels()
+	deploymentSpec := kext.DeploymentSpec{
+		Replicas: &replicas,
+		Selector: &meta.LabelSelector{MatchLabels: labels},
+		Template: *pod,
+	}
+
+	deployment := &kext.Deployment{
+		ObjectMeta: kapi.ObjectMeta{
+			Name:   name,
+			Labels: labels,
+		},
+		Spec: deploymentSpec,
+	}
+
+	if opts.Namespace != "" {
+		deployment.ObjectMeta.Namespace = opts.Namespace
+	}
+
+	return deployment
+}
+
+func (app *AppService) BuildService(opts AppServiceBuildOpts) *kapi.Service {
+	return nil
+}
+
+func (app *AppService) Build(opts AppServiceBuildOpts) AppServiceResourcePair {
+	pod := app.BuildPod(opts)
+
+	return AppServiceResourcePair{
+		app.BuildDeployment(opts, pod),
+		app.BuildService(opts),
+	}
+}
+
+func (app *App) Build() []AppServiceResourcePair {
 	opts := AppServiceBuildOpts{Namespace: app.Name}
-	list := &kapi.PodList{}
+	list := []AppServiceResourcePair{}
 
 	for _, service := range app.Services {
-		list.Items = append(list.Items, *service.Build(opts))
+		list = append(list, service.Build(opts))
 	}
 
 	return list
@@ -97,11 +150,19 @@ func main() {
 			},
 		},
 	}
+	for _, resources := range app.Build() {
+		deployment, err := json.MarshalIndent(resources.Deployment, "", "  ")
+		if err != nil {
+			panic(err)
+		}
 
-	data, err := json.MarshalIndent(app.Build(), "", "  ")
-	if err != nil {
-		panic(err)
+		fmt.Println(string(deployment))
+
+		service, err := json.MarshalIndent(resources.Service, "", "  ")
+		if err != nil {
+			panic(err)
+		}
+
+		fmt.Println(string(service))
 	}
-
-	fmt.Println(string(data))
 }
