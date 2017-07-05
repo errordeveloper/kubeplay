@@ -261,7 +261,7 @@ Get the source code and build the dependencies:
 go get github.com/Masterminds/glide
 go get -d github.com/errordeveloper/kubeplay
 cd $GOPATH/src/github.com/errordeveloper/kubeplay
-$GOPATH/bin/glide up
+$GOPATH/bin/glide up -v
 make -C vendor/github.com/mitchellh/go-mruby libmruby.a
 go install ./rubykube
 ```

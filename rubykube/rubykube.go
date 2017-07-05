@@ -70,7 +70,7 @@ func keep(omitFuncs []string, name string) bool {
 }
 
 func newClientConfig(overrides *clientcmd.ConfigOverrides) (*rest.Config, error) {
-	return NewNonInteractiveDeferredLoadingClientConfig(&ClientConfigLoadingRules{ExplicitPath: *kubeconfig}, overrides).ClientConfig()
+	return clientcmd.NewNonInteractiveDeferredLoadingClientConfig(&clientcmd.ClientConfigLoadingRules{ExplicitPath: *kubeconfig}, overrides).ClientConfig()
 }
 
 // NewRubyKube may return an error on mruby or k8s.io/client-go issues.
