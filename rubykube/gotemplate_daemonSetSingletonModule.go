@@ -20,7 +20,7 @@ func (c *daemonSetClass) defineSingletonMethods() {
 				}
 
 				meta := vars.daemonSet.ObjectMeta
-				daemonSet, err := c.getSignleton(meta.Namespace, meta.Name)
+				daemonSet, err := c.getSingleton(meta.Namespace, meta.Name)
 				if err != nil {
 					return nil, createException(m, err.Error())
 				}

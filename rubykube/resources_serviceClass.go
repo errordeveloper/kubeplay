@@ -9,11 +9,11 @@ type serviceTypeAlias kapi.Service
 
 //go:generate gotemplate "./templates/resource" "serviceClass(\"Service\", service, serviceTypeAlias)"
 
-func (c *serviceClass) getSignleton(ns, name string) (*kapi.Service, error) {
+func (c *serviceClass) getSingleton(ns, name string) (*kapi.Service, error) {
 	return c.rk.clientset.Core().Services(ns).Get(name)
 }
 
-//go:generate gotemplate "./templates/resource/singleton" "serviceSignletonModule(serviceClass, \"Service\", service, serviceTypeAlias)"
+//go:generate gotemplate "./templates/resource/singleton" "serviceSingletonModule(serviceClass, \"Service\", service, serviceTypeAlias)"
 
 //go:generate gotemplate "./templates/resource/podfinder" "servicePodFinderModule(serviceClass, \"Service\", service, serviceTypeAlias)"
 

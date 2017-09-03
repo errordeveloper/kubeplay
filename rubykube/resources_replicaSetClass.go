@@ -9,7 +9,7 @@ type replicaSetTypeAlias kext.ReplicaSet
 
 //go:generate gotemplate "./templates/resource" "replicaSetClass(\"ReplicaSet\", replicaSet, replicaSetTypeAlias)"
 
-func (c *replicaSetClass) getSignleton(ns, name string) (*kext.ReplicaSet, error) {
+func (c *replicaSetClass) getSingleton(ns, name string) (*kext.ReplicaSet, error) {
 	return c.rk.clientset.Extensions().ReplicaSets(ns).Get(name)
 }
 

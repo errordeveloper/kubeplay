@@ -8,7 +8,7 @@ import (
 
 // template type RubyKubeClass(parentClass, classNameString, instanceVariableName, instanceVariableType)
 
-type serviceSignletonModule struct{}
+type serviceSingletonModule struct{}
 
 func (c *serviceClass) defineSingletonMethods() {
 	c.rk.appendMethods(c.class, map[string]methodDefintion{
@@ -20,7 +20,7 @@ func (c *serviceClass) defineSingletonMethods() {
 				}
 
 				meta := vars.service.ObjectMeta
-				service, err := c.getSignleton(meta.Namespace, meta.Name)
+				service, err := c.getSingleton(meta.Namespace, meta.Name)
 				if err != nil {
 					return nil, createException(m, err.Error())
 				}

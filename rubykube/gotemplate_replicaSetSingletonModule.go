@@ -20,7 +20,7 @@ func (c *replicaSetClass) defineSingletonMethods() {
 				}
 
 				meta := vars.replicaSet.ObjectMeta
-				replicaSet, err := c.getSignleton(meta.Namespace, meta.Name)
+				replicaSet, err := c.getSingleton(meta.Namespace, meta.Name)
 				if err != nil {
 					return nil, createException(m, err.Error())
 				}

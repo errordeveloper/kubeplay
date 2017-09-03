@@ -9,7 +9,7 @@ type daemonSetTypeAlias kext.DaemonSet
 
 //go:generate gotemplate "./templates/resource" "daemonSetClass(\"DaemonSet\", daemonSet, daemonSetTypeAlias)"
 
-func (c *daemonSetClass) getSignleton(ns, name string) (*kext.DaemonSet, error) {
+func (c *daemonSetClass) getSingleton(ns, name string) (*kext.DaemonSet, error) {
 	return c.rk.clientset.Extensions().DaemonSets(ns).Get(name)
 }
 

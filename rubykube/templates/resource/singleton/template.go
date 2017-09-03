@@ -25,7 +25,7 @@ func (c *parentClass) defineSingletonMethods() {
 				}
 
 				meta := vars.instanceVariableName.ObjectMeta
-				instanceVariableName, err := c.getSignleton(meta.Namespace, meta.Name)
+				instanceVariableName, err := c.getSingleton(meta.Namespace, meta.Name)
 				if err != nil {
 					return nil, createException(m, err.Error())
 				}

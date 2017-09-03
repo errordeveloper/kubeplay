@@ -9,7 +9,7 @@ type podTypeAlias kapi.Pod
 
 //go:generate gotemplate "./templates/resource" "podClass(\"Pod\", pod, podTypeAlias)"
 
-func (c *podClass) getSignleton(ns, name string) (*kapi.Pod, error) {
+func (c *podClass) getSingleton(ns, name string) (*kapi.Pod, error) {
 	return c.rk.clientset.Core().Pods(ns).Get(name)
 }
 

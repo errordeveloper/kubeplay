@@ -20,7 +20,7 @@ func (c *podClass) defineSingletonMethods() {
 				}
 
 				meta := vars.pod.ObjectMeta
-				pod, err := c.getSignleton(meta.Namespace, meta.Name)
+				pod, err := c.getSingleton(meta.Namespace, meta.Name)
 				if err != nil {
 					return nil, createException(m, err.Error())
 				}
