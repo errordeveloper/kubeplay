@@ -29,6 +29,7 @@ func (c *parentClass) definePodFinderMethods() {
 				ns := vars.instanceVariableName.ObjectMeta.Namespace
 
 				selector := []string{}
+				// TODO: probably should use `spec.selector`
 				for k, v := range vars.instanceVariableName.ObjectMeta.Labels {
 					selector = append(selector, fmt.Sprintf("%s in (%s)", k, v))
 				}
