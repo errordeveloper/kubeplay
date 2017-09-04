@@ -92,10 +92,14 @@ func (c *podsClass) defineListMethods() {
 					return nil, nil
 				}
 
-				if -(l-1) <= i && i < 0 {
-					i = l + i
-				} else {
-					return nil, nil
+				if i < 0 {
+					if -i <= l {
+						i %= l
+						i *= -1
+						fmt.Println(i)
+					} else {
+						return nil, nil
+					}
 				}
 
 				obj, err := c.getItem(vars.pods, i)
