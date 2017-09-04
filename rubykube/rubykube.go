@@ -10,8 +10,8 @@ import (
 	//"github.com/erikh/box/signal"
 	mruby "github.com/mitchellh/go-mruby"
 
+	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	kapi "k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -280,11 +280,11 @@ func (rk *RubyKube) GetDefaultNamespace(override string) string {
 	return ns
 }
 
-func (rk *RubyKube) resourceArgs(args []*mruby.MrbValue) (string, *regexp.Regexp, *kapi.ListOptions, error) {
+func (rk *RubyKube) resourceArgs(args []*mruby.MrbValue) (string, *regexp.Regexp, *meta.ListOptions, error) {
 	var (
 		ns          string
 		nameRegexp  *regexp.Regexp
-		listOptions kapi.ListOptions
+		listOptions meta.ListOptions
 	)
 
 	validName := "[a-z0-9]([-a-z0-9]*[a-z0-9])?"
@@ -396,7 +396,7 @@ func (rk *RubyKube) resourceArgs(args []*mruby.MrbValue) (string, *regexp.Regexp
 		return nil
 	}
 
-	fail := func(err error) (string, *regexp.Regexp, *kapi.ListOptions, error) {
+	fail := func(err error) (string, *regexp.Regexp, *meta.ListOptions, error) {
 		return "", nil, nil, err
 	}
 

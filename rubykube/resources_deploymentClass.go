@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	mruby "github.com/mitchellh/go-mruby"
-	kapi "k8s.io/client-go/pkg/api/v1"
+	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kext "k8s.io/client-go/pkg/apis/extensions/v1beta1"
 )
 
@@ -14,7 +14,7 @@ type deploymentTypeAlias kext.Deployment
 //go:generate gotemplate "./templates/resource" "deploymentClass(\"Deployment\", deployment, deploymentTypeAlias)"
 
 func (c *deploymentClass) getSingleton(ns, name string) (*kext.Deployment, error) {
-	return c.rk.clientset.Extensions().Deployments(ns).Get(name)
+	return c.rk.clientset.Extensions().Deployments(ns).Get(name, meta.GetOptions{})
 }
 
 //go:generate gotemplate "./templates/resource/singleton" "deploymentSingletonModule(deploymentClass, \"deployment\", deployment, deploymentTypeAlias)"
@@ -40,7 +40,7 @@ func (c *deploymentClass) defineOwnMethods() {
 				for k, v := range vars.deployment.ObjectMeta.Labels {
 					selector = append(selector, fmt.Sprintf("%s in (%s)", k, v))
 				}
-				listOptions := kapi.ListOptions{LabelSelector: strings.Join(selector, ",")}
+				listOptions := meta.ListOptions{LabelSelector: strings.Join(selector, ",")}
 
 				replicaSets, err := c.rk.clientset.Extensions().ReplicaSets(ns).List(listOptions)
 				if err != nil {

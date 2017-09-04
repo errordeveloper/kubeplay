@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	mruby "github.com/mitchellh/go-mruby"
+	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kapi "k8s.io/client-go/pkg/api/v1"
 )
 
@@ -103,7 +104,7 @@ func (c *podMakerClass) defineOwnMethods() {
 				}
 
 				pod := kapi.Pod{
-					ObjectMeta: kapi.ObjectMeta{
+					ObjectMeta: meta.ObjectMeta{
 						Name:   name,
 						Labels: labels,
 					},

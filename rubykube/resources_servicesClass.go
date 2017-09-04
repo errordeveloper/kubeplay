@@ -2,6 +2,7 @@ package rubykube
 
 import (
 	mruby "github.com/mitchellh/go-mruby"
+	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kapi "k8s.io/client-go/pkg/api/v1"
 )
 
@@ -9,7 +10,7 @@ type serviceListTypeAlias kapi.ServiceList
 
 //go:generate gotemplate "./templates/resource" "servicesClass(\"Services\", services, serviceListTypeAlias)"
 
-func (c *servicesClass) getList(ns string, listOptions kapi.ListOptions) (*kapi.ServiceList, error) {
+func (c *servicesClass) getList(ns string, listOptions meta.ListOptions) (*kapi.ServiceList, error) {
 	return c.rk.clientset.Core().Services(ns).List(listOptions)
 }
 

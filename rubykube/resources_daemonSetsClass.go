@@ -2,7 +2,7 @@ package rubykube
 
 import (
 	mruby "github.com/mitchellh/go-mruby"
-	kapi "k8s.io/client-go/pkg/api/v1"
+	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kext "k8s.io/client-go/pkg/apis/extensions/v1beta1"
 )
 
@@ -10,7 +10,7 @@ type daemonSetListTypeAlias kext.DaemonSetList
 
 //go:generate gotemplate "./templates/resource" "daemonSetsClass(\"DaemonSets\", daemonSets, daemonSetListTypeAlias)"
 
-func (c *daemonSetsClass) getList(ns string, listOptions kapi.ListOptions) (*kext.DaemonSetList, error) {
+func (c *daemonSetsClass) getList(ns string, listOptions meta.ListOptions) (*kext.DaemonSetList, error) {
 	return c.rk.clientset.Extensions().DaemonSets(ns).List(listOptions)
 }
 

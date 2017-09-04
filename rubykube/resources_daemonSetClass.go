@@ -2,6 +2,7 @@ package rubykube
 
 import (
 	mruby "github.com/mitchellh/go-mruby"
+	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kext "k8s.io/client-go/pkg/apis/extensions/v1beta1"
 )
 
@@ -10,7 +11,7 @@ type daemonSetTypeAlias kext.DaemonSet
 //go:generate gotemplate "./templates/resource" "daemonSetClass(\"DaemonSet\", daemonSet, daemonSetTypeAlias)"
 
 func (c *daemonSetClass) getSingleton(ns, name string) (*kext.DaemonSet, error) {
-	return c.rk.clientset.Extensions().DaemonSets(ns).Get(name)
+	return c.rk.clientset.Extensions().DaemonSets(ns).Get(name, meta.GetOptions{})
 }
 
 //go:generate gotemplate "./templates/resource/singleton" "daemonSetSingletonModule(daemonSetClass, \"daemonSet\", daemonSet, daemonSetTypeAlias)"

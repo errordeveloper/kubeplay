@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	mruby "github.com/mitchellh/go-mruby"
-	kapi "k8s.io/client-go/pkg/api/v1"
+	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // template type RubyKubeClass(parentClass, classNameString, instanceVariableName, instanceVariableType)
@@ -24,10 +24,11 @@ func (c *replicaSetClass) definePodFinderMethods() {
 				ns := vars.replicaSet.ObjectMeta.Namespace
 
 				selector := []string{}
+				// TODO: probably should use `spec.selector`
 				for k, v := range vars.replicaSet.ObjectMeta.Labels {
 					selector = append(selector, fmt.Sprintf("%s in (%s)", k, v))
 				}
-				listOptions := kapi.ListOptions{LabelSelector: strings.Join(selector, ",")}
+				listOptions := meta.ListOptions{LabelSelector: strings.Join(selector, ",")}
 
 				pods, err := c.rk.clientset.Core().Pods(ns).List(listOptions)
 				if err != nil {
