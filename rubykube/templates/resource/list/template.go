@@ -98,9 +98,10 @@ func (c *parentClass) defineListMethods() {
 				}
 
 				if i < 0 {
+					// handle negative index in the way Ruby does it, i.e. no infinit wrapping
 					if -i <= l {
 						i %= l
-						i *= -1
+						i *= -1 // in Go, unlike Ruby this needs to be converted to positive value
 					} else {
 						return nil, nil
 					}
