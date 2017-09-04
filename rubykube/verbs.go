@@ -25,6 +25,7 @@ func init() {
 	verbJumpTable = map[string]verbDefinition{
 		"pods":                {pods, mruby.ArgsReq(0) | mruby.ArgsOpt(2)},
 		"services":            {services, mruby.ArgsReq(0) | mruby.ArgsOpt(2)},
+		"deployments":         {deployments, mruby.ArgsReq(0) | mruby.ArgsOpt(2)},
 		"replicasets":         {replicaSets, mruby.ArgsReq(0) | mruby.ArgsOpt(2)},
 		"daemonsets":          {daemonSets, mruby.ArgsReq(0) | mruby.ArgsOpt(2)},
 		"make_pod":            {makePod, mruby.ArgsReq(1)},
@@ -67,6 +68,23 @@ func services(rk *RubyKube, args []*mruby.MrbValue, m *mruby.Mrb, self *mruby.Mr
 	}
 
 	if value, err = newServicesObj.Update(args...); err != nil {
+		return nil, createException(m, err.Error())
+	}
+	return value, nil
+}
+
+func deployments(rk *RubyKube, args []*mruby.MrbValue, m *mruby.Mrb, self *mruby.MrbValue) (mruby.Value, mruby.Value) {
+	var (
+		value mruby.Value
+		err   error
+	)
+
+	newDeploymentsObj, err := rk.classes.Deployments.New()
+	if err != nil {
+		return nil, createException(m, err.Error())
+	}
+
+	if value, err = newDeploymentsObj.Update(args...); err != nil {
 		return nil, createException(m, err.Error())
 	}
 	return value, nil

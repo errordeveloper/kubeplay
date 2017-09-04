@@ -35,6 +35,9 @@ type Classes struct {
 	Service  *serviceClass
 	Services *servicesClass
 
+	Deployments *deploymentsClass
+	Deployment  *deploymentClass
+
 	ReplicaSets *replicaSetsClass
 	ReplicaSet  *replicaSetClass
 
@@ -125,6 +128,12 @@ func NewRubyKube(omitFuncs []string, rl *readline.Instance) (*RubyKube, error) {
 
 	rk.classes.Service = newServiceClass(rk)
 	rk.classes.Service.defineOwnMethods()
+
+	rk.classes.Deployments = newDeploymentsClass(rk)
+	rk.classes.Deployments.defineOwnMethods()
+
+	rk.classes.Deployment = newDeploymentClass(rk)
+	rk.classes.Deployment.defineOwnMethods()
 
 	rk.classes.ReplicaSets = newReplicaSetsClass(rk)
 	rk.classes.ReplicaSets.defineOwnMethods()
