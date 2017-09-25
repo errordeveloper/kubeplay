@@ -1,9 +1,6 @@
 package rubykube
 
 import (
-	"fmt"
-	"strings"
-
 	mruby "github.com/mitchellh/go-mruby"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kext "k8s.io/client-go/pkg/apis/extensions/v1beta1"
@@ -35,12 +32,7 @@ func (c *deploymentClass) defineOwnMethods() {
 
 				ns := vars.deployment.ObjectMeta.Namespace
 
-				selector := []string{}
-				// TODO: probably should use `spec.selector`
-				for k, v := range vars.deployment.ObjectMeta.Labels {
-					selector = append(selector, fmt.Sprintf("%s in (%s)", k, v))
-				}
-				listOptions := meta.ListOptions{LabelSelector: strings.Join(selector, ",")}
+				listOptions := meta.ListOptions{LabelSelector: meta.FormatLabelSelector(vars.deployment.Spec.Selector)}
 
 				replicaSets, err := c.rk.clientset.Extensions().ReplicaSets(ns).List(listOptions)
 				if err != nil {
