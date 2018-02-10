@@ -8,11 +8,11 @@ import (
 	"regexp"
 
 	mruby "github.com/mitchellh/go-mruby"
-	kapi "k8s.io/client-go/pkg/api/v1"
+	corev1 "k8s.io/api/core/v1"
 )
 
 type podLogsClassInstanceVars struct {
-	pods []kapi.Pod
+	pods []corev1.Pod
 	logs map[string]*bytes.Buffer
 }
 
@@ -36,7 +36,7 @@ func (c *podLogsClass) defineOwnMethods() {
 
 					for _, container := range pod.Spec.Containers {
 						name := fmt.Sprintf("%s/%s:%s", pod.ObjectMeta.Namespace, pod.ObjectMeta.Name, container.Name)
-						stream, err := c.rk.clientset.Core().Pods(pod.ObjectMeta.Namespace).GetLogs(pod.ObjectMeta.Name, &kapi.PodLogOptions{Container: container.Name}).Stream()
+						stream, err := c.rk.clientset.Core().Pods(pod.ObjectMeta.Namespace).GetLogs(pod.ObjectMeta.Name, &corev1.PodLogOptions{Container: container.Name}).Stream()
 						if err != nil {
 							return nil, createException(m, err.Error())
 						}

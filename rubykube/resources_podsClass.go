@@ -2,15 +2,15 @@ package rubykube
 
 import (
 	mruby "github.com/mitchellh/go-mruby"
-	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
-	kapi "k8s.io/client-go/pkg/api/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	corev1 "k8s.io/api/core/v1"
 )
 
-type podListTypeAlias kapi.PodList
+type podListTypeAlias = corev1.PodList
 
 //go:generate gotemplate "./templates/resource" "podsClass(\"Pods\", pods, podListTypeAlias)"
 
-func (c *podsClass) getList(ns string, listOptions meta.ListOptions) (*kapi.PodList, error) {
+func (c *podsClass) getList(ns string, listOptions metav1.ListOptions) (*corev1.PodList, error) {
 	return c.rk.clientset.Core().Pods(ns).List(listOptions)
 }
 

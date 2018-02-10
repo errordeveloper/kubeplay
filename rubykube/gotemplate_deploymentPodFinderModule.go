@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	mruby "github.com/mitchellh/go-mruby"
-	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // template type RubyKubeClass(parentClass, classNameString, instanceVariableName, instanceVariableType)
@@ -28,7 +28,7 @@ func (c *deploymentClass) definePodFinderMethods() {
 				for k, v := range vars.deployment.ObjectMeta.Labels {
 					selector = append(selector, fmt.Sprintf("%s in (%s)", k, v))
 				}
-				listOptions := meta.ListOptions{LabelSelector: strings.Join(selector, ",")}
+				listOptions := metav1.ListOptions{LabelSelector: strings.Join(selector, ",")}
 
 				pods, err := c.rk.clientset.Core().Pods(ns).List(listOptions)
 				if err != nil {

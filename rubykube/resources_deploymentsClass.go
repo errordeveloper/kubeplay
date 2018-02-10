@@ -2,16 +2,16 @@ package rubykube
 
 import (
 	mruby "github.com/mitchellh/go-mruby"
-	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
-	kext "k8s.io/client-go/pkg/apis/extensions/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	appsv1 "k8s.io/api/apps/v1"
 )
 
-type deploymentListTypeAlias kext.DeploymentList
+type deploymentListTypeAlias = appsv1.DeploymentList
 
 //go:generate gotemplate "./templates/resource" "deploymentsClass(\"Deployments\", deployments, deploymentListTypeAlias)"
 
-func (c *deploymentsClass) getList(ns string, listOptions meta.ListOptions) (*kext.DeploymentList, error) {
-	return c.rk.clientset.Extensions().Deployments(ns).List(listOptions)
+func (c *deploymentsClass) getList(ns string, listOptions metav1.ListOptions) (*appsv1.DeploymentList, error) {
+	return c.rk.clientset.Apps().Deployments(ns).List(listOptions)
 }
 
 func (c *deploymentsClass) getItem(deployments deploymentListTypeAlias, index int) (*deploymentClassInstance, error) {

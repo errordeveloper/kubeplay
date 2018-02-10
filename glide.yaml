@@ -2,17 +2,20 @@ package: github.com/errordeveloper/kubeplay
 import:
 - package: github.com/chzyer/readline
   version: ^1.4.0
-#- package: github.com/erikh/box
-#  version: ^0.3.3
-#  subpackages:
-#  - signal
 - package: github.com/mitchellh/go-mruby
-  #repo: https://github.com/erikh/go-mruby
-  #version: c474c62
-#- package: k8s.io/apimachinery
-- package: k8s.io/client-go
-  version: 4.0.0
+- package: "k8s.io/client-go"
+  version: "v6.0.0"
   subpackages:
   - kubernetes
-  - pkg/api/v1
   - tools/clientcmd
+- package: "k8s.io/apimachinery"
+  version: "180eddb345a5be3a157cea1c624700ad5bd27b8f"
+  subpackages:
+  - pkg/api/resource
+  - pkg/apis/meta/v1
+  - pkg/runtime
+  - pkg/util/intstr
+- package: "k8s.io/kubernetes"
+  version: "v1.9.2"
+  subpackages:
+  - pkg/printers

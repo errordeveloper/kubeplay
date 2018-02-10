@@ -2,16 +2,16 @@ package rubykube
 
 import (
 	mruby "github.com/mitchellh/go-mruby"
-	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
-	kext "k8s.io/client-go/pkg/apis/extensions/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	appsv1 "k8s.io/api/apps/v1"
 )
 
-type deploymentTypeAlias kext.Deployment
+type deploymentTypeAlias = appsv1.Deployment
 
 //go:generate gotemplate "./templates/resource" "deploymentClass(\"Deployment\", deployment, deploymentTypeAlias)"
 
-func (c *deploymentClass) getSingleton(ns, name string) (*kext.Deployment, error) {
-	return c.rk.clientset.Extensions().Deployments(ns).Get(name, meta.GetOptions{})
+func (c *deploymentClass) getSingleton(ns, name string) (*appsv1.Deployment, error) {
+	return c.rk.clientset.Apps().Deployments(ns).Get(name, metav1.GetOptions{})
 }
 
 //go:generate gotemplate "./templates/resource/singleton" "deploymentSingletonModule(deploymentClass, \"deployment\", deployment, deploymentTypeAlias)"
@@ -32,9 +32,9 @@ func (c *deploymentClass) defineOwnMethods() {
 
 				ns := vars.deployment.ObjectMeta.Namespace
 
-				listOptions := meta.ListOptions{LabelSelector: meta.FormatLabelSelector(vars.deployment.Spec.Selector)}
+				listOptions := metav1.ListOptions{LabelSelector: metav1.FormatLabelSelector(vars.deployment.Spec.Selector)}
 
-				replicaSets, err := c.rk.clientset.Extensions().ReplicaSets(ns).List(listOptions)
+				replicaSets, err := c.rk.clientset.Apps().ReplicaSets(ns).List(listOptions)
 				if err != nil {
 					return nil, createException(m, err.Error())
 				}

@@ -2,16 +2,16 @@ package rubykube
 
 import (
 	mruby "github.com/mitchellh/go-mruby"
-	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
-	kext "k8s.io/client-go/pkg/apis/extensions/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	appsv1 "k8s.io/api/apps/v1"
 )
 
-type replicaSetTypeAlias kext.ReplicaSet
+type replicaSetTypeAlias appsv1.ReplicaSet
 
 //go:generate gotemplate "./templates/resource" "replicaSetClass(\"ReplicaSet\", replicaSet, replicaSetTypeAlias)"
 
-func (c *replicaSetClass) getSingleton(ns, name string) (*kext.ReplicaSet, error) {
-	return c.rk.clientset.Extensions().ReplicaSets(ns).Get(name, meta.GetOptions{})
+func (c *replicaSetClass) getSingleton(ns, name string) (*appsv1.ReplicaSet, error) {
+	return c.rk.clientset.Apps().ReplicaSets(ns).Get(name, metav1.GetOptions{})
 }
 
 //go:generate gotemplate "./templates/resource/singleton" "replicaSetSingletonModule(replicaSetClass, \"replicaSet\", replicaSet, replicaSetTypeAlias)"

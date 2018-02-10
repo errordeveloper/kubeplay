@@ -2,7 +2,7 @@ package resourcepodfinder
 
 import (
 	mruby "github.com/mitchellh/go-mruby"
-	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // template type RubyKubeClass(parentClass, classNameString, instanceVariableName, instanceVariableType)
@@ -25,7 +25,7 @@ func (c *parentClass) definePodFinderMethods() {
 
 				ns := vars.instanceVariableName.ObjectMeta.Namespace
 
-				listOptions := meta.ListOptions{LabelSelector: meta.FormatLabelSelector(vars.deployment.Spec.Selector)}
+				listOptions := metav1.ListOptions{LabelSelector: metav1.FormatLabelSelector(vars.deployment.Spec.Selector)}
 
 				pods, err := c.rk.clientset.Core().Pods(ns).List(listOptions)
 				if err != nil {

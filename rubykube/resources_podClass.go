@@ -2,16 +2,16 @@ package rubykube
 
 import (
 	mruby "github.com/mitchellh/go-mruby"
-	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
-	kapi "k8s.io/client-go/pkg/api/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	corev1 "k8s.io/api/core/v1"
 )
 
-type podTypeAlias kapi.Pod
+type podTypeAlias = corev1.Pod
 
 //go:generate gotemplate "./templates/resource" "podClass(\"Pod\", pod, podTypeAlias)"
 
-func (c *podClass) getSingleton(ns, name string) (*kapi.Pod, error) {
-	return c.rk.clientset.Core().Pods(ns).Get(name, meta.GetOptions{})
+func (c *podClass) getSingleton(ns, name string) (*corev1.Pod, error) {
+	return c.rk.clientset.Core().Pods(ns).Get(name, metav1.GetOptions{})
 }
 
 //go:generate gotemplate "./templates/resource/singleton" "podSingletonModule(podClass, \"Pod\", pod, podTypeAlias)"
@@ -26,7 +26,7 @@ func (c *podClass) defineOwnMethods() {
 					return nil, createException(m, err.Error())
 				}
 
-				pod := kapi.Pod(vars.pod)
+				pod := corev1.Pod(vars.pod)
 				ns := c.rk.GetDefaultNamespace(pod.ObjectMeta.Namespace)
 
 				if _, err = c.rk.clientset.Core().Pods(ns).Create(&pod); err != nil {
@@ -46,7 +46,7 @@ func (c *podClass) defineOwnMethods() {
 
 				ns := c.rk.GetDefaultNamespace(vars.pod.ObjectMeta.Namespace)
 
-				if err = c.rk.clientset.Core().Pods(ns).Delete(vars.pod.ObjectMeta.Name, &meta.DeleteOptions{}); err != nil {
+				if err = c.rk.clientset.Core().Pods(ns).Delete(vars.pod.ObjectMeta.Name, &metav1.DeleteOptions{}); err != nil {
 					return nil, createException(m, err.Error())
 				}
 
@@ -65,8 +65,8 @@ func (c *podClass) defineOwnMethods() {
 				if err != nil {
 					return nil, createException(m, err.Error())
 				}
-				pod := kapi.Pod(vars.pod)
-				newPodLogsObj.vars.pods = []kapi.Pod{pod}
+				pod := corev1.Pod(vars.pod)
+				newPodLogsObj.vars.pods = []corev1.Pod{pod}
 				return callWithException(m, newPodLogsObj.self, "get!")
 			},
 			instanceMethod,

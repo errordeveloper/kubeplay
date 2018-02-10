@@ -2,16 +2,16 @@ package rubykube
 
 import (
 	mruby "github.com/mitchellh/go-mruby"
-	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
-	kapi "k8s.io/client-go/pkg/api/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	corev1 "k8s.io/api/core/v1"
 )
 
-type serviceTypeAlias kapi.Service
+type serviceTypeAlias = corev1.Service
 
 //go:generate gotemplate "./templates/resource" "serviceClass(\"Service\", service, serviceTypeAlias)"
 
-func (c *serviceClass) getSingleton(ns, name string) (*kapi.Service, error) {
-	return c.rk.clientset.Core().Services(ns).Get(name, meta.GetOptions{})
+func (c *serviceClass) getSingleton(ns, name string) (*corev1.Service, error) {
+	return c.rk.clientset.Core().Services(ns).Get(name, metav1.GetOptions{})
 }
 
 //go:generate gotemplate "./templates/resource/singleton" "serviceSingletonModule(serviceClass, \"Service\", service, serviceTypeAlias)"

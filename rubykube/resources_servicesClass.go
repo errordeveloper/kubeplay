@@ -2,15 +2,15 @@ package rubykube
 
 import (
 	mruby "github.com/mitchellh/go-mruby"
-	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
-	kapi "k8s.io/client-go/pkg/api/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	corev1 "k8s.io/api/core/v1"
 )
 
-type serviceListTypeAlias kapi.ServiceList
+type serviceListTypeAlias = corev1.ServiceList
 
 //go:generate gotemplate "./templates/resource" "servicesClass(\"Services\", services, serviceListTypeAlias)"
 
-func (c *servicesClass) getList(ns string, listOptions meta.ListOptions) (*kapi.ServiceList, error) {
+func (c *servicesClass) getList(ns string, listOptions metav1.ListOptions) (*corev1.ServiceList, error) {
 	return c.rk.clientset.Core().Services(ns).List(listOptions)
 }
 

@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	mruby "github.com/mitchellh/go-mruby"
-	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
-	kapi "k8s.io/client-go/pkg/api/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	corev1 "k8s.io/api/core/v1"
 )
 
 type podMakerClassInstanceVars struct {
@@ -81,7 +81,7 @@ func (c *podMakerClass) defineOwnMethods() {
 
 				fmt.Printf("stringParams=%+v\nhashParams=%+v\narrayParams=%+v\n", stringParams, hashParamsCol.ToMapOfMapsOfStrings(), arrayParamsCol.ToMapOfSlicesOfStrings())
 
-				container := kapi.Container{}
+				container := corev1.Container{}
 				var name string
 
 				// `hashArgsToSimpleMap` will validate that "image" key was given, so we don't need to
@@ -103,13 +103,13 @@ func (c *podMakerClass) defineOwnMethods() {
 					return nil, createException(m, err.Error())
 				}
 
-				pod := kapi.Pod{
-					ObjectMeta: meta.ObjectMeta{
+				pod := corev1.Pod{
+					ObjectMeta: metav1.ObjectMeta{
 						Name:   name,
 						Labels: labels,
 					},
-					Spec: kapi.PodSpec{
-						Containers: []kapi.Container{container},
+					Spec: corev1.PodSpec{
+						Containers: []corev1.Container{container},
 					},
 				}
 
